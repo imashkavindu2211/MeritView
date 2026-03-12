@@ -51,15 +51,11 @@ export default function EnterMarks() {
         </CardHeader>
         <CardContent className="px-8 pb-12">
           <form onSubmit={handleSubmit} className="space-y-12 animate-in fade-in zoom-in-95 duration-500">
-            {message && (
-              <div className={`p-5 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top-2 duration-500 shadow-lg ${
-                message.type === 'success' 
-                  ? 'bg-primary text-primary-foreground font-black shadow-primary/20' 
-                  : 'bg-destructive text-destructive-foreground font-black shadow-destructive/20'
-              }`}>
-                {message.type === 'success' ? <CheckCircle2 className="w-8 h-8 shrink-0" /> : <AlertCircle className="w-8 h-8 shrink-0"/>}
+            {message && message.type === 'error' && (
+              <div className="p-5 rounded-2xl bg-destructive text-destructive-foreground flex items-center gap-4 shadow-lg shadow-destructive/20 animate-in slide-in-from-top-2 duration-500 font-black">
+                <AlertCircle className="w-8 h-8 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-lg uppercase tracking-tight leading-none">{message.type === 'success' ? 'Success!' : 'Registration Error'}</p>
+                  <p className="text-lg uppercase tracking-tight leading-none">Registration Error</p>
                   <p className="text-sm opacity-90 mt-1 font-bold">{message.text}</p>
                 </div>
               </div>
@@ -146,9 +142,31 @@ export default function EnterMarks() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full text-xl h-16 rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-[1.02] transform transition-all" disabled={loading}>
-              {loading ? "Processing..." : "Submit Marks"}
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
+              <Button type="submit" className={`h-16 rounded-2xl font-black shadow-lg transition-all transform active:scale-95 ${message?.type === 'success' ? 'w-full sm:w-20 bg-green-500 hover:bg-green-600' : 'w-full sm:flex-1 text-xl shadow-primary/20 hover:scale-[1.02]'}`} disabled={loading}>
+                {loading ? (
+                   <div className="flex items-center gap-2">
+                     <span className="w-2 h-2 rounded-full bg-white animate-bounce" />
+                     <span className="w-2 h-2 rounded-full bg-white animate-bounce [animation-delay:-0.15s]" />
+                     <span className="w-2 h-2 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
+                   </div>
+                ) : message?.type === 'success' ? (
+                   <CheckCircle2 className="w-8 h-8" />
+                ) : (
+                  "Submit Marks"
+                )}
+              </Button>
+
+              {message && message.type === 'success' && (
+                <div className="flex-1 bg-green-50 border-2 border-green-100 text-green-700 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500 shadow-sm">
+                  <CheckCircle2 className="w-6 h-6 shrink-0 text-green-500" />
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-tight leading-none">Accepted</p>
+                    <p className="text-xs font-bold opacity-80 mt-1">{message.text}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
