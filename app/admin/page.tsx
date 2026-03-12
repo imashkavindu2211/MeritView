@@ -79,8 +79,6 @@ export default function AdminDashboard() {
           table: 'students_results',
         },
         (payload) => {
-          console.log("Realtime Update Received!", payload);
-          // Refetch data when something changes
           fetchData();
         }
       )
@@ -89,7 +87,7 @@ export default function AdminDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchData]);
+  }, [fetchData, fetchConfig]);
 
   async function handleLogout() {
     await adminLogout();
