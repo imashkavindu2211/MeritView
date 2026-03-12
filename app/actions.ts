@@ -254,3 +254,21 @@ export async function toggleConfig(key: "marks_entry_enabled" | "view_rankings_e
   revalidatePath("/result");
   return { success: true };
 }
+export async function deleteStudent(id: string) {
+  const cookieStore = await cookies();
+  if (!cookieStore.get("admin_token")) return { success: false, error: "Unauthorized" };
+
+  try {
+    const { error } = await supabase
+      .from("students_results")
+      .delete()
+      .eq("id", id);
+
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}

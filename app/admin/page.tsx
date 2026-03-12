@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { getAdminRankings, adminLogout, deleteAllData, getSystemConfig, toggleConfig } from "@/app/actions";
+import { getAdminRankings, adminLogout, deleteAllData, getSystemConfig, toggleConfig, deleteStudent } from "@/app/actions";
 import { StudentResult } from "@/types";
 import { PROVINCES, DISTRICTS } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -121,6 +121,21 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleDeleteSingle(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      return;
+    }
+    
+    setLoading(true);
+    const result = await deleteStudent(id);
+    if (result.success) {
+      fetchData();
+    } else {
+      alert("Error deleting student: " + result.error);
+    }
+    setLoading(false);
+  }
+
   const needsProvinceFilter = activeTab === "do_province" || activeTab === "open_province";
   const needsDistrictFilter = activeTab === "do_district" || activeTab === "open_district";
 
@@ -231,19 +246,30 @@ export default function AdminDashboard() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-neutral-50/50">
-                    <TableRow className="hover:bg-transparent border-b-2">
-                      <TableHead className="w-[120px] text-center font-black text-muted-foreground uppercase tracking-widest text-[10px]">Pos</TableHead>
-                      <TableHead className="font-black text-muted-foreground uppercase tracking-widest text-[10px] py-6">Candidate Identity</TableHead>
-                      <TableHead className="font-black text-muted-foreground uppercase tracking-widest text-[10px]">Origin</TableHead>
-                      <TableHead className="text-right font-black text-muted-foreground uppercase tracking-widest text-[10px]">IQ</TableHead>
-                      <TableHead className="text-right font-black text-muted-foreground uppercase tracking-widest text-[10px]">GK</TableHead>
+                    <TableRow className="hover:bg-transparent border-b-2 text-neutral-900">
+                      <TableHead className="w-[80px] text-center font-black uppercase tracking-widest text-[10px]">Action</TableHead>
+                      <TableHead className="w-[100px] text-center font-black uppercase tracking-widest text-[10px]">Pos</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Candidate Identity</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px]">Origin</TableHead>
+                      <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">IQ</TableHead>
+                      <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">GK</TableHead>
                       <TableHead className="text-right font-black text-primary uppercase tracking-widest text-[10px] pr-10">Aggregate</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.map((student, index) => (
-                      <TableRow key={student.id} className="group hover:bg-primary/5 transition-all border-b last:border-0">
-                        <TableCell className="py-6">
+                      <TableRow key={student.id} className="group hover:bg-red-50/50 transition-all border-b last:border-0 border-neutral-100">
+                        <TableCell className="py-6 text-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleDeleteSingle(student.id!, student.name)}
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </Button>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex justify-center">
                             <span className={`inline-flex items-center justify-center w-10 h-10 rounded-2xl font-black text-sm shadow-sm transition-all group-hover:scale-110 ${
                               index === 0 ? 'bg-amber-400 text-white shadow-amber-200' : 
