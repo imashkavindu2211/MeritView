@@ -4,7 +4,7 @@ CREATE TABLE public.students_results (
   name text NOT NULL,
   province text NOT NULL,
   district text NOT NULL,
-  category text NOT NULL, -- Open or DO
+  category text NOT NULL, -- Open or Limited
   iq_marks integer NOT NULL,
   gk_marks integer NOT NULL,
   total_marks integer NOT NULL,

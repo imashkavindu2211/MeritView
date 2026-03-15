@@ -18,7 +18,7 @@ export const DUMMY_STUDENTS = [
     name: "Nimal Silva",
     province: "Central",
     district: "Kandy",
-    category: "DO",
+    category: "Limited",
     iq_marks: 90,
     gk_marks: 80,
     total_marks: 170
@@ -38,7 +38,7 @@ export const DUMMY_STUDENTS = [
     name: "Akindu Wijesinghe",
     province: "Western",
     district: "Gampaha",
-    category: "DO",
+    category: "Limited",
     iq_marks: 75,
     gk_marks: 90,
     total_marks: 165

@@ -4,7 +4,7 @@ export type StudentResult = {
   name: string;
   province: string;
   district: string;
-  category: 'Open' | 'DO';
+  category: 'Open' | 'Limited';
   iq_marks: number;
   gk_marks: number;
   total_marks: number;

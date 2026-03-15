@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("do_island");
+  const [activeTab, setActiveTab] = useState("limited_island");
   const [data, setData] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -29,13 +29,13 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    let category: "DO" | "Open" | undefined;
+    let category: "Limited" | "Open" | undefined;
     let sortBy: "total_marks" | "iq_marks" | "gk_marks" = "total_marks";
     let filterProvince = undefined;
     let filterDistrict = undefined;
 
     // Parse tab config
-    if (activeTab.includes("do_")) category = "DO";
+    if (activeTab.includes("limited_")) category = "Limited";
     if (activeTab.includes("open_")) category = "Open";
 
     if (activeTab.includes("province")) filterProvince = selectedProvince || PROVINCES[0];
@@ -134,8 +134,8 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  const needsProvinceFilter = activeTab === "do_province" || activeTab === "open_province";
-  const needsDistrictFilter = activeTab === "do_district" || activeTab === "open_district";
+  const needsProvinceFilter = activeTab === "limited_province" || activeTab === "open_province";
+  const needsDistrictFilter = activeTab === "limited_district" || activeTab === "open_district";
 
   return (
     <div className="w-full max-w-[98vw] mx-auto py-12 px-6 animate-in fade-in duration-700">
@@ -165,11 +165,11 @@ export default function AdminDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <TabsList className="flex flex-wrap h-auto p-2 bg-neutral-100/50 backdrop-blur-sm rounded-[2rem] gap-2 border shadow-inner">
           {[
-            { v: "do_island", l: "DO Island" },
+            { v: "limited_island", l: "Limited Island" },
             { v: "open_island", l: "Open Island" },
-            { v: "do_province", l: "DO Province" },
+            { v: "limited_province", l: "Limited Province" },
             { v: "open_province", l: "Open Province" },
-            { v: "do_district", l: "DO District" },
+            { v: "limited_district", l: "Limited District" },
             { v: "open_district", l: "Open District" },
             { v: "iq_ranking", l: "IQ Peak" },
             { v: "gk_ranking", l: "GK Peak" }

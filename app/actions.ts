@@ -11,7 +11,7 @@ export async function submitMarks(formData: FormData) {
     const name = formData.get("name") as string;
     const province = formData.get("province") as string;
     const district = formData.get("district") as string;
-    const category = formData.get("category") as "Open" | "DO";
+    const category = formData.get("category") as "Open" | "Limited";
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
 
@@ -139,7 +139,7 @@ export async function getStudentRank(nic: string, type: 'island' | 'province' | 
 
 export async function getAdminRankings(
   params: {
-    category?: "Open" | "DO";
+    category?: "Open" | "Limited";
     province?: string;
     district?: string;
     sortBy?: "total_marks" | "iq_marks" | "gk_marks";
