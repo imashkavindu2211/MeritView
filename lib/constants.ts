@@ -27,5 +27,5 @@ export const DISTRICTS = Object.values(PROVINCE_DISTRICTS).flat() as readonly st
 
 export const CATEGORIES = [
   "Open",
-  "DO"
+  "Limited"
 ] as const;
