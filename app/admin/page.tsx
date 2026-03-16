@@ -282,7 +282,6 @@ export default function AdminDashboard() {
                         <TableCell>
                           <div>
                             <p className="font-black text-foreground tracking-tight text-lg">{student.name}</p>
-                            <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase opacity-60 italic">{student.nic}</p>
                           </div>
                         </TableCell>
                         <TableCell>

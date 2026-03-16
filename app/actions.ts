@@ -146,7 +146,7 @@ export async function getAdminRankings(
   }
 ) {
   try {
-    let query = supabase.from("students_results").select("*");
+    let query = supabase.from("students_results").select("id, name, province, district, category, iq_marks, gk_marks, total_marks, created_at");
 
     if (params.category) query = query.eq("category", params.category);
     if (params.province) query = query.eq("province", params.province);
