@@ -24,8 +24,8 @@ export default async function Home() {
               <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                 <ClipboardEdit className="w-32 h-32" />
               </div>
-              <div className="bg-primary/20 p-6 rounded-3xl mb-8 group-hover:scale-110 transition-transform duration-500">
-                <ClipboardEdit className="w-12 h-12 text-primary-foreground" />
+              <div className="bg-primary/10 p-6 rounded-3xl mb-8 group-hover:scale-110 transition-transform duration-500">
+                <ClipboardEdit className="w-12 h-12 text-primary" />
               </div>
               <h2 className="text-3xl font-extrabold text-foreground group-hover:text-primary transition-colors">
                 Enter Marks
