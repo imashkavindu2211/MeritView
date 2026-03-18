@@ -353,7 +353,7 @@ export default function AdminDashboard() {
           <Card className={`border-0 shadow-xl rounded-[2.5rem] overflow-hidden transition-all duration-500 ${systemConfig.view_rankings ? 'bg-white ring-1 ring-secondary/20' : 'bg-neutral-50 grayscale opacity-80'}`}>
             <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
-                <div className={`p-4 rounded-2xl ${systemConfig.view_rankings ? 'bg-secondary/10 text-secondary' : 'bg-neutral-200 text-neutral-500'}`}>
+                <div className={`p-4 rounded-2xl ${systemConfig.view_rankings ? 'bg-secondary/20 text-secondary-foreground' : 'bg-neutral-200 text-neutral-500'}`}>
                    {systemConfig.view_rankings ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
                 </div>
                 <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${systemConfig.view_rankings ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

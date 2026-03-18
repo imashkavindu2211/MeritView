@@ -34,7 +34,7 @@ export default function CheckResults() {
 
   return (
     <div className="w-full max-w-xl mx-auto py-20 px-4 animate-in fade-in zoom-in-95 duration-700">
-      <Card className="border-0 shadow-2xl shadow-primary/10 rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-primary/5">
+      <Card className="border-0 shadow-[0_32px_64px_-16px_rgba(210,230,250,0.5)] rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-primary/5">
         <div className="h-3 bg-gradient-to-r from-primary/50 to-primary w-full" />
         <CardHeader className="text-center space-y-4 pb-10 pt-12 px-8">
           <div className="bg-primary/10 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-4 text-primary shadow-inner">

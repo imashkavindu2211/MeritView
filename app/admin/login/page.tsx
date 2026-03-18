@@ -33,7 +33,7 @@ export default function AdminLogin() {
 
   return (
     <div className="w-full max-w-xl mx-auto py-20 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <Card className="border-0 shadow-2xl shadow-primary/10 rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-primary/5">
+      <Card className="border-0 shadow-[0_32px_64px_-16px_rgba(210,230,250,0.5)] rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-primary/5">
         <div className="h-3 bg-gradient-to-r from-secondary to-primary w-full" />
         <CardHeader className="text-center space-y-4 pb-10 pt-12 px-8">
           <div className="bg-secondary/50 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-4 text-secondary-foreground shadow-inner">
@@ -66,7 +66,7 @@ export default function AdminLogin() {
               </div>
             )}
 
-            <Button type="submit" className="w-full h-16 text-xl rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transform transition-all bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading}>
+            <Button type="submit" className="w-full h-16 text-xl rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transform transition-all bg-foreground text-background hover:bg-foreground/90" disabled={loading}>
               {loading ? "Verifying..." : "Initialize Session"}
             </Button>
           </form>
