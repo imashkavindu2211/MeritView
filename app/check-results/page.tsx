@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CATEGORIES, SUBJECTS } from "@/lib/constants";
-import { searchStudent, getAdminRankings } from "@/app/actions";
+import { searchStudent, getAdminRankings, getGlobalCandidateStats } from "@/app/actions";
 import { StudentResult } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trophy, Search, AlertCircle, Loader2 } from "lucide-react";
@@ -22,6 +22,7 @@ export default function CheckResults() {
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [rankings, setRankings] = useState<StudentResult[]>([]);
   const [rankingsLoading, setRankingsLoading] = useState(false);
+  const [totals, setTotals] = useState<{ categoryTotal: number; subjectTotal: number } | null>(null);
 
   async function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -44,12 +45,15 @@ export default function CheckResults() {
   async function handleViewRankings() {
     if (!selectedCategory || !selectedSubject) return;
     setRankingsLoading(true);
-    const result = await getAdminRankings({ 
-      category: selectedCategory as any, 
-      subject: selectedSubject 
-    });
+    const [result, stats] = await Promise.all([
+      getAdminRankings({ category: selectedCategory as any, subject: selectedSubject }),
+      getGlobalCandidateStats(selectedCategory, selectedSubject)
+    ]);
     if (result.success) {
       setRankings(result.data || []);
+    }
+    if (stats.success) {
+      setTotals({ categoryTotal: stats.categoryTotal!, subjectTotal: stats.subjectTotal! });
     }
     setRankingsLoading(false);
   }
@@ -145,6 +149,22 @@ export default function CheckResults() {
               </Button>
             </div>
           </CardHeader>
+          {totals && (
+            <div className="bg-neutral-50/50 p-6 flex flex-wrap items-center justify-center gap-8 border-b border-neutral-100 animate-in fade-in duration-500">
+               <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-primary rounded-full" />
+                  <p className="text-sm font-black text-muted-foreground uppercase tracking-widest">
+                    {selectedCategory === 'Open' ? 'Full Open' : selectedCategory} Total: <span className="text-foreground ml-1">{totals.categoryTotal}</span>
+                  </p>
+               </div>
+               <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-secondary rounded-full" />
+                  <p className="text-sm font-black text-muted-foreground uppercase tracking-widest">
+                    {selectedSubject} Total: <span className="text-foreground ml-1">{totals.subjectTotal}</span>
+                  </p>
+               </div>
+            </div>
+          )}
           <CardContent className="p-0">
             {rankingsLoading ? (
               <div className="p-32 flex flex-col items-center justify-center gap-4">

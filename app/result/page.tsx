@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { searchStudent, getStudentRank } from "@/app/actions";
+import { searchStudent, getStudentRank, getStudentCandidateStats } from "@/app/actions";
 import { StudentResult } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,9 @@ function ResultPageContent() {
   // Ranks state
   const [activeRank, setActiveRank] = useState<{ rank: number | null; totalCandidates: number; type: string } | null>(null);
   const [loadingRank, setLoadingRank] = useState(false);
+  
+  // Stats state
+  const [stats, setStats] = useState<{ categoryStats: any; subjectStats: any } | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -32,6 +35,11 @@ function ResultPageContent() {
       const response = await searchStudent(nicParam);
       if (response.success && response.data) {
         setData(response.data);
+        // Fetch stats too
+        const statsRes = await getStudentCandidateStats(nicParam);
+        if (statsRes.success) {
+          setStats({ categoryStats: statsRes.categoryStats, subjectStats: statsRes.subjectStats });
+        }
       } else {
         setError(response.error || "Result not found");
       }
@@ -86,7 +94,7 @@ function ResultPageContent() {
         <CardHeader className="text-center pb-12 pt-16 border-b border-neutral-50 bg-neutral-50/30 px-8">
           <div className="flex flex-wrap justify-center gap-3 mb-6">
             <Badge className="px-4 py-1.5 rounded-full capitalize bg-primary/20 text-primary-foreground font-black tracking-widest text-xs border-0">
-              {data.category} Stream
+              {data.category === 'Open' ? 'Full Open' : data.category} Stream
             </Badge>
             <Badge className="px-4 py-1.5 rounded-full capitalize bg-secondary/30 text-secondary-foreground font-black tracking-widest text-xs border-0">
               {data.subject}
@@ -147,49 +155,95 @@ function ResultPageContent() {
             </div>
           </div>
 
-          <div className="space-y-10 pt-16 border-t-2 border-dashed border-neutral-200">
-            <h3 className="text-2xl font-black text-foreground text-center tracking-tight">Performance Analytics</h3>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {[
-                { id: "island", label: "National", color: "text-amber-500", bg: "hover:bg-amber-50" },
-                { id: "province", label: "Provincial", color: "text-slate-400", bg: "hover:bg-slate-50" },
-                { id: "district", label: "District", color: "text-orange-400", bg: "hover:bg-orange-50" }
-              ].map((item) => (
-                <Button 
-                  key={item.id}
-                  onClick={() => fetchRank(item.id as any)} 
-                  variant="outline" 
-                  className={`h-24 rounded-3xl text-lg font-black tracking-tight border-2 transition-all hover:scale-[1.05] active:scale-95 flex flex-col gap-1 items-center justify-center ${item.bg}`}
-                >
-                  <Trophy className={`w-6 h-6 ${item.color}`} />
-                  {item.label} Rank
-                </Button>
-              ))}
-            </div>
-
-            {loadingRank && (
-              <div className="flex justify-center p-12 bg-neutral-50 rounded-[2rem] animate-pulse">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              </div>
-            )}
-
-            {activeRank && !loadingRank && (
-              <div className="mt-8 p-10 bg-gradient-to-br from-primary/10 to-transparent rounded-[2.5rem] border-2 border-primary/20 text-center animate-in zoom-in-95 duration-500 shadow-inner">
-                <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4">
-                  Official {activeRank.type} Placement
-                </p>
-                <div className="flex flex-col items-center justify-center">
-                  <div className="text-8xl font-black text-foreground tracking-tighter mb-4">
-                    <span className="text-4xl text-primary font-bold mr-1">#</span>{activeRank.rank}
+          <div className="space-y-16 pt-16 border-t-2 border-dashed border-neutral-200">
+            {stats && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <h4 className="text-lg font-black text-center uppercase tracking-widest text-primary underline decoration-primary/20 underline-offset-4 mb-8">
+                     {data.category === 'Open' ? 'Full Open' : data.category} - Distribution
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-neutral-50 p-4 rounded-2xl border text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Sri Lanka</p>
+                      <p className="text-2xl font-black">{stats.categoryStats.island}</p>
+                    </div>
+                    <div className="bg-neutral-50 p-4 rounded-2xl border text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Province</p>
+                      <p className="text-2xl font-black">{stats.categoryStats.province}</p>
+                    </div>
+                    <div className="bg-neutral-50 p-4 rounded-2xl border text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">District</p>
+                      <p className="text-2xl font-black">{stats.categoryStats.district}</p>
+                    </div>
                   </div>
-                  <div className="h-1.5 w-24 bg-primary/30 rounded-full mb-6" />
-                  <p className="text-lg text-muted-foreground font-bold italic">
-                    Ranking among <span className="text-foreground not-italic underline decoration-primary/30 underline-offset-4">{activeRank.totalCandidates}</span> evaluated candidates
-                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  <h4 className="text-lg font-black text-center uppercase tracking-widest text-secondary-foreground underline decoration-secondary/20 underline-offset-4 mb-8">
+                     {data.subject} - Distribution
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-neutral-50 p-4 rounded-2xl border text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Sri Lanka</p>
+                      <p className="text-2xl font-black">{stats.subjectStats.island}</p>
+                    </div>
+                    <div className="bg-neutral-50 p-4 rounded-2xl border text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Province</p>
+                      <p className="text-2xl font-black">{stats.subjectStats.province}</p>
+                    </div>
+                    <div className="bg-neutral-50 p-4 rounded-2xl border text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">District</p>
+                      <p className="text-2xl font-black">{stats.subjectStats.district}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
+
+            <div className="space-y-10">
+              <h3 className="text-2xl font-black text-foreground text-center tracking-tight">Performance Analytics</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {[
+                  { id: "island", label: "National", color: "text-amber-500", bg: "hover:bg-amber-50" },
+                  { id: "province", label: "Provincial", color: "text-slate-400", bg: "hover:bg-slate-50" },
+                  { id: "district", label: "District", color: "text-orange-400", bg: "hover:bg-orange-50" }
+                ].map((item) => (
+                  <Button 
+                    key={item.id}
+                    onClick={() => fetchRank(item.id as any)} 
+                    variant="outline" 
+                    className={`h-24 rounded-3xl text-lg font-black tracking-tight border-2 transition-all hover:scale-[1.05] active:scale-95 flex flex-col gap-1 items-center justify-center ${item.bg}`}
+                  >
+                    <Trophy className={`w-6 h-6 ${item.color}`} />
+                    {item.label} Rank
+                  </Button>
+                ))}
+              </div>
+
+              {loadingRank && (
+                <div className="flex justify-center p-12 bg-neutral-50 rounded-[2rem] animate-pulse">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                </div>
+              )}
+
+              {activeRank && !loadingRank && (
+                <div className="mt-8 p-10 bg-gradient-to-br from-primary/10 to-transparent rounded-[2.5rem] border-2 border-primary/20 text-center animate-in zoom-in-95 duration-500 shadow-inner">
+                  <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4">
+                    Official {activeRank.type} {data.subject} Placement
+                  </p>
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="text-8xl font-black text-foreground tracking-tighter mb-4">
+                      <span className="text-4xl text-primary font-bold mr-1">#</span>{activeRank.rank}
+                    </div>
+                    <div className="h-1.5 w-24 bg-primary/30 rounded-full mb-6" />
+                    <p className="text-lg text-muted-foreground font-bold italic">
+                      Ranking among <span className="text-foreground not-italic underline decoration-primary/30 underline-offset-4">{activeRank.totalCandidates}</span> candidates in this subject
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

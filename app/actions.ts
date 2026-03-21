@@ -144,6 +144,79 @@ export async function getStudentRank(nic: string, type: 'island' | 'province' | 
   }
 }
 
+export async function getStudentCandidateStats(nic: string) {
+  try {
+    const { data: student, error: studentError } = await supabase
+      .from("students_results")
+      .select("*")
+      .eq("nic", nic)
+      .single();
+
+    if (studentError || !student) {
+      return { success: false, error: "Student not found" };
+    }
+
+    const { category, subject, province, district } = student;
+
+    // Helper for counts
+    const getCount = async (filters: { category?: string; subject?: string; province?: string; district?: string }) => {
+      let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
+      if (filters.category) query = query.eq('category', filters.category);
+      if (filters.subject) query = query.eq('subject', filters.subject);
+      if (filters.province) query = query.eq('province', filters.province);
+      if (filters.district) query = query.eq('district', filters.district);
+      const { count } = await query;
+      return count || 0;
+    };
+
+    // Main Category Counts (Island, Province, District)
+    const [catIsland, catProvince, catDistrict] = await Promise.all([
+      getCount({ category }),
+      getCount({ category, province }),
+      getCount({ category, district })
+    ]);
+
+    // Subject Counts (Island, Province, District)
+    const [subIsland, subProvince, subDistrict] = await Promise.all([
+      getCount({ category, subject }),
+      getCount({ category, subject, province }),
+      getCount({ category, subject, district })
+    ]);
+
+    return {
+      success: true,
+      categoryStats: { island: catIsland, province: catProvince, district: catDistrict },
+      subjectStats: { island: subIsland, province: subProvince, district: subDistrict }
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getGlobalCandidateStats(category: string, subject: string) {
+  try {
+    // Helper for counts
+    const getCount = async (filters: { category?: string; subject?: string }) => {
+      let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
+      if (filters.category) query = query.eq('category', filters.category);
+      if (filters.subject) query = query.eq('subject', filters.subject);
+      const { count } = await query;
+      return count || 0;
+    };
+
+    const catTotal = await getCount({ category });
+    const subTotal = await getCount({ category, subject });
+
+    return {
+      success: true,
+      categoryTotal: catTotal,
+      subjectTotal: subTotal
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function getAdminRankings(
   params: {
     category?: "Open" | "Do";
