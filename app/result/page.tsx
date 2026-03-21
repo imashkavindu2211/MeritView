@@ -84,9 +84,14 @@ function ResultPageContent() {
         <div className="h-4 bg-gradient-to-r from-primary/50 via-primary to-secondary w-full" />
         
         <CardHeader className="text-center pb-12 pt-16 border-b border-neutral-50 bg-neutral-50/30 px-8">
-          <Badge className="mx-auto w-fit mb-6 px-4 py-1.5 rounded-full capitalize bg-primary/20 text-primary-foreground font-black tracking-widest text-xs border-0">
-            {data.category} Stream
-          </Badge>
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
+            <Badge className="px-4 py-1.5 rounded-full capitalize bg-primary/20 text-primary-foreground font-black tracking-widest text-xs border-0">
+              {data.category} Stream
+            </Badge>
+            <Badge className="px-4 py-1.5 rounded-full capitalize bg-secondary/30 text-secondary-foreground font-black tracking-widest text-xs border-0">
+              {data.subject}
+            </Badge>
+          </div>
           <CardTitle className="text-5xl font-black text-foreground tracking-tight mb-2">{data.name}</CardTitle>
           <CardDescription className="text-xl text-muted-foreground font-bold tracking-tight">Reg No: {data.nic}</CardDescription>
         </CardHeader>

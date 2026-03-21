@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PROVINCES, PROVINCE_DISTRICTS, CATEGORIES } from "@/lib/constants";
+import { PROVINCES, PROVINCE_DISTRICTS, CATEGORIES, SUBJECTS } from "@/lib/constants";
 import { submitMarks } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,8 +107,8 @@ export default function EnterMarks() {
                   </select>
                 </div>
 
-                <div className="space-y-3 md:col-span-2">
-                  <Label htmlFor="category" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Category</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="category" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Type</Label>
                   <select 
                     id="category" 
                     name="category" 
@@ -116,8 +116,22 @@ export default function EnterMarks() {
                     required
                     defaultValue=""
                   >
-                    <option value="" disabled className="bg-white text-foreground">Select Category</option>
+                    <option value="" disabled className="bg-white text-foreground">Select Type</option>
                     {CATEGORIES.map((c) => <option key={c} value={c} className="bg-white text-foreground">{c}</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="subject" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Subject</Label>
+                  <select 
+                    id="subject" 
+                    name="subject" 
+                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground"
+                    required
+                    defaultValue=""
+                  >
+                    <option value="" disabled className="bg-white text-foreground">Select Subject</option>
+                    {SUBJECTS.map((s) => <option key={s} value={s} className="bg-white text-foreground">{s}</option>)}
                   </select>
                 </div>
               </div>

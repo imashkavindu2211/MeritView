@@ -4,24 +4,25 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { getAdminRankings, adminLogout, deleteAllData, getSystemConfig, toggleConfig, deleteStudent } from "@/app/actions";
 import { StudentResult } from "@/types";
-import { PROVINCES, DISTRICTS } from "@/lib/constants";
+import { PROVINCES, DISTRICTS, SUBJECTS } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert } from "lucide-react";
+import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("limited_island");
+  const [activeTab, setActiveTab] = useState("do_island");
   const [data, setData] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Filters
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
 
   // System Config
   const [systemConfig, setSystemConfig] = useState({ marks_entry: true, view_rankings: true });
@@ -29,13 +30,13 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    let category: "Limited" | "Open" | undefined;
+    let category: "Do" | "Open" | undefined;
     let sortBy: "total_marks" | "iq_marks" | "gk_marks" = "total_marks";
     let filterProvince = undefined;
     let filterDistrict = undefined;
 
     // Parse tab config
-    if (activeTab.includes("limited_")) category = "Limited";
+    if (activeTab.includes("do_")) category = "Do";
     if (activeTab.includes("open_")) category = "Open";
 
     if (activeTab.includes("province")) filterProvince = selectedProvince || PROVINCES[0];
@@ -46,6 +47,7 @@ export default function AdminDashboard() {
 
     const response = await getAdminRankings({
       category: category as any,
+      subject: (selectedSubject && selectedSubject !== "ALL_SUBJECTS") ? selectedSubject : undefined,
       province: filterProvince,
       district: filterDistrict,
       sortBy
@@ -55,7 +57,7 @@ export default function AdminDashboard() {
       setData(response.data || []);
     }
     setLoading(false);
-  }, [activeTab, selectedProvince, selectedDistrict]);
+  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject]);
 
   const fetchConfig = useCallback(async () => {
     setConfigLoading(true);
@@ -134,8 +136,9 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  const needsProvinceFilter = activeTab === "limited_province" || activeTab === "open_province";
-  const needsDistrictFilter = activeTab === "limited_district" || activeTab === "open_district";
+  const needsProvinceFilter = activeTab === "do_province" || activeTab === "open_province";
+  const needsDistrictFilter = activeTab === "do_district" || activeTab === "open_district";
+  const needsSubjectFilter = !activeTab.includes("ranking");
 
   return (
     <div className="w-full max-w-[98vw] mx-auto py-12 px-6 animate-in fade-in duration-700">
@@ -165,11 +168,11 @@ export default function AdminDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <TabsList className="flex flex-wrap h-auto p-2 bg-neutral-100/50 backdrop-blur-sm rounded-[2rem] gap-2 border shadow-inner">
           {[
-            { v: "limited_island", l: "Limited Island" },
+            { v: "do_island", l: "Do Island" },
             { v: "open_island", l: "Open Island" },
-            { v: "limited_province", l: "Limited Province" },
+            { v: "do_province", l: "Do Province" },
             { v: "open_province", l: "Open Province" },
-            { v: "limited_district", l: "Limited District" },
+            { v: "do_district", l: "Do District" },
             { v: "open_district", l: "Open District" },
             { v: "iq_ranking", l: "IQ Peak" },
             { v: "gk_ranking", l: "GK Peak" }
@@ -185,6 +188,25 @@ export default function AdminDashboard() {
         </TabsList>
 
         <div className="flex flex-col md:flex-row gap-6">
+          {needsSubjectFilter && (
+            <div className="w-full md:w-80 animate-in slide-in-from-left-4 duration-500">
+              <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-primary/5 border ring-1 ring-primary/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4 ml-1">Stream / Subject</p>
+                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                  <SelectTrigger className="h-14 rounded-xl border-2 bg-neutral-50/50 font-bold text-foreground focus:ring-4 focus:ring-primary/10">
+                    <SelectValue placeholder="All Subjects" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-2">
+                    <SelectItem value="ALL_SUBJECTS">All Subjects</SelectItem>
+                    {SUBJECTS.map((s) => (
+                      <SelectItem key={s} value={s} className="font-medium">{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
           {needsProvinceFilter && (
             <div className="w-full md:w-80 animate-in slide-in-from-left-4 duration-500">
               <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-primary/5 border ring-1 ring-primary/5">
@@ -248,6 +270,7 @@ export default function AdminDashboard() {
                       <TableHead className="w-[80px] text-center font-black uppercase tracking-widest text-[10px]">Action</TableHead>
                       <TableHead className="w-[100px] text-center font-black uppercase tracking-widest text-[10px]">Pos</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Candidate Identity</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px]">Stream / Subject</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Origin</TableHead>
                       <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">IQ</TableHead>
                       <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">GK</TableHead>
@@ -282,6 +305,16 @@ export default function AdminDashboard() {
                         <TableCell>
                           <div>
                             <p className="font-black text-foreground tracking-tight text-lg">{student.name}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                             <div className="bg-primary/10 px-3 py-1 rounded-lg">
+                                <p className="text-xs font-black text-primary uppercase tracking-tighter">{student.category}</p>
+                             </div>
+                             <div className="bg-secondary/10 px-3 py-1 rounded-lg">
+                                <p className="text-xs font-black text-secondary-foreground uppercase tracking-tighter">{student.subject}</p>
+                             </div>
                           </div>
                         </TableCell>
                         <TableCell>

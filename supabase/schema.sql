@@ -4,7 +4,8 @@ CREATE TABLE public.students_results (
   name text NOT NULL,
   province text NOT NULL,
   district text NOT NULL,
-  category text NOT NULL, -- Open or Limited
+  category text NOT NULL, -- Open or Do
+  subject text NOT NULL,
   iq_marks integer NOT NULL,
   gk_marks integer NOT NULL,
   total_marks integer NOT NULL,
@@ -21,6 +22,7 @@ CREATE INDEX IF NOT EXISTS students_results_total_marks_idx ON public.students_r
 CREATE INDEX IF NOT EXISTS students_results_province_idx ON public.students_results (province);
 CREATE INDEX IF NOT EXISTS students_results_district_idx ON public.students_results (district);
 CREATE INDEX IF NOT EXISTS students_results_category_idx ON public.students_results (category);
+CREATE INDEX IF NOT EXISTS students_results_subject_idx ON public.students_results (subject);
 -- Config table for feature toggles
 CREATE TABLE IF NOT EXISTS public.system_config (
   key text PRIMARY KEY,

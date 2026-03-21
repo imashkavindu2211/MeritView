@@ -11,7 +11,8 @@ export async function submitMarks(formData: FormData) {
     const name = formData.get("name") as string;
     const province = formData.get("province") as string;
     const district = formData.get("district") as string;
-    const category = formData.get("category") as "Open" | "Limited";
+    const category = formData.get("category") as "Open" | "Do";
+    const subject = formData.get("subject") as string;
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
 
@@ -21,7 +22,7 @@ export async function submitMarks(formData: FormData) {
       return { success: false, error: "Marks submission is currently disabled by the administrator." };
     }
 
-    if (!nic || !name || !province || !district || !category || isNaN(iq_marks) || isNaN(gk_marks)) {
+    if (!nic || !name || !province || !district || !category || !subject || isNaN(iq_marks) || isNaN(gk_marks)) {
       return { success: false, error: "All fields are required and marks must be valid numbers." };
     }
 
@@ -33,6 +34,7 @@ export async function submitMarks(formData: FormData) {
       province,
       district,
       category,
+      subject,
       iq_marks,
       gk_marks,
       total_marks,
@@ -99,6 +101,9 @@ export async function getStudentRank(nic: string, type: 'island' | 'province' | 
 
     let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
     
+    // Crucially: Filter by category and subject for all rankings as requested
+    query = query.eq('category', student.category).eq('subject', student.subject);
+
     if (type === 'province') {
       query = query.eq('province', student.province);
     } else if (type === 'district') {
@@ -114,6 +119,8 @@ export async function getStudentRank(nic: string, type: 'island' | 'province' | 
     let higherScoresQuery = supabase
       .from("students_results")
       .select("id", { count: 'exact', head: true })
+      .eq('category', student.category)
+      .eq('subject', student.subject)
       .gt('total_marks', student.total_marks);
 
     if (type === 'province') {
@@ -139,16 +146,18 @@ export async function getStudentRank(nic: string, type: 'island' | 'province' | 
 
 export async function getAdminRankings(
   params: {
-    category?: "Open" | "Limited";
+    category?: "Open" | "Do";
+    subject?: string;
     province?: string;
     district?: string;
     sortBy?: "total_marks" | "iq_marks" | "gk_marks";
   }
 ) {
   try {
-    let query = supabase.from("students_results").select("id, name, province, district, category, iq_marks, gk_marks, total_marks, created_at");
+    let query = supabase.from("students_results").select("id, name, province, district, category, subject, iq_marks, gk_marks, total_marks, created_at");
 
     if (params.category) query = query.eq("category", params.category);
+    if (params.subject) query = query.eq("subject", params.subject);
     if (params.province) query = query.eq("province", params.province);
     if (params.district) query = query.eq("district", params.district);
 

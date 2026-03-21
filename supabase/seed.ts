@@ -9,6 +9,7 @@ export const DUMMY_STUDENTS = [
     province: "Western",
     district: "Colombo",
     category: "Open",
+    subject: "Common",
     iq_marks: 85,
     gk_marks: 70,
     total_marks: 155
@@ -18,7 +19,8 @@ export const DUMMY_STUDENTS = [
     name: "Nimal Silva",
     province: "Central",
     district: "Kandy",
-    category: "Limited",
+    category: "Do",
+    subject: "Chemistry",
     iq_marks: 90,
     gk_marks: 80,
     total_marks: 170
@@ -29,6 +31,7 @@ export const DUMMY_STUDENTS = [
     province: "Southern",
     district: "Galle",
     category: "Open",
+    subject: "Common",
     iq_marks: 95,
     gk_marks: 85,
     total_marks: 180
@@ -38,7 +41,8 @@ export const DUMMY_STUDENTS = [
     name: "Akindu Wijesinghe",
     province: "Western",
     district: "Gampaha",
-    category: "Limited",
+    category: "Do",
+    subject: "Physics",
     iq_marks: 75,
     gk_marks: 90,
     total_marks: 165
@@ -49,6 +53,7 @@ export const DUMMY_STUDENTS = [
     province: "Central",
     district: "Matale",
     category: "Open",
+    subject: "Chemistry",
     iq_marks: 88,
     gk_marks: 78,
     total_marks: 166
