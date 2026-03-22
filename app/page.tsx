@@ -62,10 +62,10 @@ export default async function Home() {
                 <Search className="w-12 h-12 text-secondary-foreground" />
               </div>
               <h2 className="text-3xl font-extrabold text-foreground group-hover:text-primary transition-colors">
-                Check Results
+                Check Report
               </h2>
               <p className="text-muted-foreground mt-4 text-center font-medium">
-                Find and view detailed performance reports.
+                Access your individual performance report using NIC.
               </p>
             </div>
           </Link>
