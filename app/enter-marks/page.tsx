@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, AlertCircle, ClipboardEdit } from "lucide-react";
+import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
 
 export default function EnterMarks() {
   const router = useRouter();
@@ -123,16 +124,13 @@ export default function EnterMarks() {
 
                 <div className="space-y-3">
                   <Label htmlFor="subject" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Subject</Label>
-                  <select 
+                  <SubjectAutocomplete 
                     id="subject" 
                     name="subject" 
-                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground"
-                    required
-                    defaultValue=""
-                  >
-                    <option value="" disabled className="bg-white text-foreground">Select Subject</option>
-                    {SUBJECTS.map((s) => <option key={s} value={s} className="bg-white text-foreground">{s}</option>)}
-                  </select>
+                    required 
+                    placeholder="Type to search subject..."
+                    className="h-14"
+                  />
                 </div>
               </div>
             </div>

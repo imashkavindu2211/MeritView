@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
+
 export default function CheckResults() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -131,14 +133,12 @@ export default function CheckResults() {
                 <option value="">Select Type</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <select 
-                value={selectedSubject} 
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="h-14 rounded-2xl border-2 bg-neutral-50/50 px-4 font-bold text-foreground focus:outline-none focus:border-primary/50 transition-all"
-              >
-                <option value="">Select Subject</option>
-                {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <SubjectAutocomplete 
+                placeholder="Search subject..."
+                className="h-14 min-w-[240px]"
+                onSelect={setSelectedSubject}
+                defaultValue={selectedSubject}
+              />
               <Button 
                 onClick={handleViewRankings} 
                 disabled={!selectedCategory || !selectedSubject || rankingsLoading}

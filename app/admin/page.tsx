@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("do_island");
@@ -192,17 +194,13 @@ export default function AdminDashboard() {
             <div className="w-full md:w-80 animate-in slide-in-from-left-4 duration-500">
               <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-primary/5 border ring-1 ring-primary/5">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4 ml-1">Stream / Subject</p>
-                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                  <SelectTrigger className="h-14 rounded-xl border-2 bg-neutral-50/50 font-bold text-foreground focus:ring-4 focus:ring-primary/10">
-                    <SelectValue placeholder="All Subjects" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-2">
-                    <SelectItem value="ALL_SUBJECTS">All Subjects</SelectItem>
-                    {SUBJECTS.map((s) => (
-                      <SelectItem key={s} value={s} className="font-medium">{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SubjectAutocomplete 
+                  defaultValue={selectedSubject} 
+                  onSelect={setSelectedSubject} 
+                  showAllOption={true}
+                  placeholder="All Subjects"
+                  className="h-14"
+                />
               </div>
             </div>
           )}
