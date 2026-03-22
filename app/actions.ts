@@ -12,7 +12,7 @@ export async function submitMarks(formData: FormData) {
     const province = formData.get("province") as string;
     const district = formData.get("district") as string;
     const category = formData.get("category") as "Open" | "Do";
-    const subject = formData.get("subject") as string;
+    const subjects = formData.getAll("subject") as string[];
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
 
@@ -22,27 +22,33 @@ export async function submitMarks(formData: FormData) {
       return { success: false, error: "Marks submission is currently disabled by the administrator." };
     }
 
-    if (!nic || !name || !province || !district || !category || !subject || isNaN(iq_marks) || isNaN(gk_marks)) {
-      return { success: false, error: "All fields are required and marks must be valid numbers." };
+    if (!nic || !name || !province || !district || !category || subjects.length === 0 || isNaN(iq_marks) || isNaN(gk_marks)) {
+      return { success: false, error: "All fields are required and subjects must be selected." };
     }
 
     const total_marks = iq_marks + gk_marks;
 
-    const { error } = await supabase.from("students_results").insert({
-      nic,
-      name,
-      province,
-      district,
-      category,
-      subject,
-      iq_marks,
-      gk_marks,
-      total_marks,
-    });
+    // Use a single batch insert for all subjects
+    const { error } = await supabase.from("students_results").insert(
+      subjects.map(s => ({
+        nic,
+        name,
+        province,
+        district,
+        category,
+        subject: s,
+        iq_marks,
+        gk_marks,
+        total_marks,
+      }))
+    );
 
     if (error) {
       if (error.code === '23505') {
-        return { success: false, error: "A student with this NIC has already been entered." };
+        return { 
+          success: false, 
+          error: "Submission failed. Either the NIC is already used for one of these subjects, or the database still has a unique constraint on the NIC number (refer to supabase/schema.sql for the required update)." 
+        };
       }
       console.error(error);
       return { success: false, error: "Database error. Failed to submit marks." };
@@ -55,7 +61,7 @@ export async function submitMarks(formData: FormData) {
   }
 }
 
-export async function searchStudent(nic: string): Promise<{ success: boolean; data?: StudentResult; error?: string }> {
+export async function searchStudent(nic: string): Promise<{ success: boolean; data?: StudentResult[]; error?: string }> {
   try {
     if (!nic) {
       return { success: false, error: "NIC is required." };
@@ -70,15 +76,15 @@ export async function searchStudent(nic: string): Promise<{ success: boolean; da
     const { data, error } = await supabase
       .from("students_results")
       .select("*")
-      .eq("nic", nic)
-      .single();
+      .eq("nic", nic);
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return { success: false, error: "Result not found for this NIC." };
-      }
       console.error(error);
       return { success: false, error: "Error fetching student result." };
+    }
+
+    if (!data || data.length === 0) {
+      return { success: false, error: "Result not found for this NIC." };
     }
 
     return { success: true, data };
@@ -87,12 +93,12 @@ export async function searchStudent(nic: string): Promise<{ success: boolean; da
   }
 }
 
-export async function getStudentRank(nic: string, type: 'island' | 'province' | 'district') {
+export async function getStudentRank(resultId: string, type: 'island' | 'province' | 'district') {
   try {
     const { data: student, error: studentError } = await supabase
       .from("students_results")
       .select("*")
-      .eq("nic", nic)
+      .eq("id", resultId)
       .single();
 
     if (studentError || !student) {
@@ -144,12 +150,12 @@ export async function getStudentRank(nic: string, type: 'island' | 'province' | 
   }
 }
 
-export async function getStudentCandidateStats(nic: string) {
+export async function getStudentCandidateStats(resultId: string) {
   try {
     const { data: student, error: studentError } = await supabase
       .from("students_results")
       .select("*")
-      .eq("nic", nic)
+      .eq("id", resultId)
       .single();
 
     if (studentError || !student) {

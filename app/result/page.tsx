@@ -13,9 +13,12 @@ function ResultPageContent() {
   const searchParams = useSearchParams();
   const nicParam = searchParams.get("nic");
   
-  const [data, setData] = useState<StudentResult | null>(null);
+  const [results, setResults] = useState<StudentResult[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const data = results[selectedIndex];
 
   // Ranks state
   const [activeRank, setActiveRank] = useState<{ rank: number | null; totalCandidates: number; type: string } | null>(null);
@@ -33,13 +36,8 @@ function ResultPageContent() {
       }
       
       const response = await searchStudent(nicParam);
-      if (response.success && response.data) {
-        setData(response.data);
-        // Fetch stats too
-        const statsRes = await getStudentCandidateStats(nicParam);
-        if (statsRes.success) {
-          setStats({ categoryStats: statsRes.categoryStats, subjectStats: statsRes.subjectStats });
-        }
+      if (response.success && response.data && response.data.length > 0) {
+        setResults(response.data);
       } else {
         setError(response.error || "Result not found");
       }
@@ -49,6 +47,20 @@ function ResultPageContent() {
     fetchData();
   }, [nicParam]);
 
+  useEffect(() => {
+    async function fetchStats() {
+      if (data) {
+        const statsRes = await getStudentCandidateStats(data.id);
+        if (statsRes.success) {
+          setStats({ categoryStats: statsRes.categoryStats, subjectStats: statsRes.subjectStats });
+        }
+      }
+    }
+    fetchStats();
+    // Clear active rank when switching subject
+    setActiveRank(null);
+  }, [data?.id]);
+
   async function fetchRank(type: "island" | "province" | "district") {
     if (!nicParam) return;
     setLoadingRank(true);
@@ -57,7 +69,7 @@ function ResultPageContent() {
     // Slight artificial delay for UX feeling of calculation
     await new Promise(r => setTimeout(r, 400));
     
-    const rankData = await getStudentRank(nicParam, type);
+    const rankData = await getStudentRank(data.id, type);
     setActiveRank({ rank: rankData.rank, totalCandidates: rankData.totalCandidates, type });
     setLoadingRank(false);
   }
@@ -88,6 +100,20 @@ function ResultPageContent() {
 
   return (
     <div className="w-full max-w-4xl mx-auto py-16 px-4 sm:px-6 animate-in fade-in duration-700">
+      {results.length > 1 && (
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
+          {results.map((res, index) => (
+            <Button
+              key={res.id}
+              onClick={() => setSelectedIndex(index)}
+              variant={selectedIndex === index ? "default" : "outline"}
+              className={`rounded-full px-6 font-bold transition-all ${selectedIndex === index ? 'scale-110 shadow-lg' : 'opacity-70 hover:opacity-100'}`}
+            >
+              {res.subject}
+            </Button>
+          ))}
+        </div>
+      )}
       <Card className="border-0 shadow-2xl shadow-primary/10 rounded-[3rem] bg-white overflow-hidden ring-1 ring-primary/5">
         <div className="h-4 bg-gradient-to-r from-primary/50 via-primary to-secondary w-full" />
         

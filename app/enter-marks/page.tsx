@@ -8,14 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, AlertCircle, ClipboardEdit } from "lucide-react";
+import { CheckCircle2, AlertCircle, ClipboardEdit, X } from "lucide-react";
 import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
+import { Badge } from "@/components/ui/badge";
 
 export default function EnterMarks() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const addSubject = (s: string) => {
+    if (s && s !== "" && !selectedSubjects.includes(s)) {
+      setSelectedSubjects([...selectedSubjects, s]);
+    }
+  };
+
+  const removeSubject = (s: string) => {
+    setSelectedSubjects(selectedSubjects.filter(sub => sub !== s));
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -122,15 +134,32 @@ export default function EnterMarks() {
                   </select>
                 </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="subject" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Subject</Label>
+                <div className="space-y-4">
+                  <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Subjects (Multiple Available)</Label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {selectedSubjects.map(s => (
+                      <Badge key={s} className="px-4 py-2 rounded-xl bg-primary/10 text-primary border-primary/20 flex items-center gap-2 group animate-in zoom-in-95 duration-200">
+                        <span className="font-bold text-xs">{s}</span>
+                        <X 
+                          className="w-4 h-4 cursor-pointer hover:bg-primary/20 rounded-full p-0.5 transition-colors" 
+                          onClick={() => removeSubject(s)} 
+                        />
+                      </Badge>
+                    ))}
+                  </div>
                   <SubjectAutocomplete 
-                    id="subject" 
-                    name="subject" 
-                    required 
-                    placeholder="Type to search subject..."
+                    placeholder="Search and add subject..."
+                    onSelect={(s) => addSubject(s)}
                     className="h-14"
+                    clearOnSelect={true}
                   />
+                  {/* Hidden inputs to send multiple subject values */}
+                  {selectedSubjects.map(s => (
+                    <input key={s} type="hidden" name="subject" value={s} />
+                  ))}
+                  {selectedSubjects.length === 0 && (
+                    <p className="text-xs text-destructive font-bold ml-1 animate-pulse">Select at least one subject.</p>
+                  )}
                 </div>
               </div>
             </div>

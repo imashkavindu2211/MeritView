@@ -1,6 +1,6 @@
 CREATE TABLE public.students_results (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  nic text UNIQUE NOT NULL,
+  nic text NOT NULL,
   name text NOT NULL,
   province text NOT NULL,
   district text NOT NULL,
@@ -9,7 +9,8 @@ CREATE TABLE public.students_results (
   iq_marks integer NOT NULL,
   gk_marks integer NOT NULL,
   total_marks integer NOT NULL,
-  created_at timestamp DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at timestamp DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE (nic, subject)
 );
 
 -- Note: In a production environment, you should enable Row Level Security (RLS)

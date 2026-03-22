@@ -14,6 +14,7 @@ interface SubjectAutocompleteProps {
   onSelect?: (value: string) => void;
   className?: string;
   showAllOption?: boolean;
+  clearOnSelect?: boolean;
 }
 
 export function SubjectAutocomplete({ 
@@ -24,7 +25,8 @@ export function SubjectAutocomplete({
   defaultValue = "",
   onSelect,
   className,
-  showAllOption = false
+  showAllOption = false,
+  clearOnSelect = false
 }: SubjectAutocompleteProps) {
   const [query, setQuery] = useState(defaultValue);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -63,7 +65,7 @@ export function SubjectAutocomplete({
 
   const handleSelect = (subject: string) => {
     const displayValue = subject === "ALL_SUBJECTS" ? "All Subjects" : subject;
-    setQuery(displayValue);
+    setQuery(clearOnSelect ? "" : displayValue);
     setIsOpen(false);
     if (onSelect) onSelect(subject);
   };
