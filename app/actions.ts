@@ -11,7 +11,7 @@ export async function submitMarks(formData: FormData) {
     const name = formData.get("name") as string;
     const province = formData.get("province") as string;
     const district = formData.get("district") as string;
-    const category = formData.get("category") as "Open" | "Do";
+    const category = formData.get("category") as "Open" | "Limited";
     const subjects = formData.getAll("subject") as string[];
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
@@ -225,7 +225,7 @@ export async function getGlobalCandidateStats(category: string, subject: string)
 
 export async function getAdminRankings(
   params: {
-    category?: "Open" | "Do";
+    category?: "Open" | "Limited";
     subject?: string;
     province?: string;
     district?: string;
@@ -275,6 +275,11 @@ export async function adminLogin(formData: FormData) {
     return { success: true };
   }
   return { success: false, error: "Invalid credentials" };
+}
+
+export async function verifyAdminPassword(password: string) {
+  const validPass = process.env.ADMIN_PASSWORD || "admin123";
+  return password === validPass;
 }
 
 export async function adminLogout() {

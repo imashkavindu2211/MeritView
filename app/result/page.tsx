@@ -120,7 +120,7 @@ function ResultPageContent() {
         <CardHeader className="text-center pb-12 pt-16 border-b border-neutral-50 bg-neutral-50/30 px-8">
           <div className="flex flex-wrap justify-center gap-3 mb-6">
             <Badge className="px-4 py-1.5 rounded-full capitalize bg-primary/20 text-primary-foreground font-black tracking-widest text-xs border-0">
-              {data.category === 'Open' ? 'Full Open' : data.category} Stream
+              {data.category === 'Open' ? 'Full Open' : 'Limited'} Stream
             </Badge>
             <Badge className="px-4 py-1.5 rounded-full capitalize bg-secondary/30 text-secondary-foreground font-black tracking-widest text-xs border-0">
               {data.subject}
@@ -186,7 +186,7 @@ function ResultPageContent() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div className="space-y-6">
                   <h4 className="text-lg font-black text-center uppercase tracking-widest text-primary underline decoration-primary/20 underline-offset-4 mb-8">
-                     {data.category === 'Open' ? 'Full Open' : data.category} - Distribution
+                     {data.category === 'Open' ? 'Full Open' : 'Limited'} - Distribution
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-neutral-50 p-4 rounded-2xl border text-center">

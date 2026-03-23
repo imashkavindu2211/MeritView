@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { getAdminRankings, adminLogout, deleteAllData, getSystemConfig, toggleConfig, deleteStudent } from "@/app/actions";
+import { getAdminRankings, adminLogout, deleteAllData, getSystemConfig, toggleConfig, deleteStudent, verifyAdminPassword } from "@/app/actions";
 import { StudentResult } from "@/types";
 import { PROVINCES, DISTRICTS, SUBJECTS } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +17,7 @@ import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("do_island");
+  const [activeTab, setActiveTab] = useState("limited_island");
   const [data, setData] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -32,13 +32,13 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    let category: "Do" | "Open" | undefined;
+    let category: "Limited" | "Open" | undefined;
     let sortBy: "total_marks" | "iq_marks" | "gk_marks" = "total_marks";
     let filterProvince = undefined;
     let filterDistrict = undefined;
 
     // Parse tab config
-    if (activeTab.includes("do_")) category = "Do";
+    if (activeTab.includes("limited_")) category = "Limited";
     if (activeTab.includes("open_")) category = "Open";
 
     if (activeTab.includes("province")) filterProvince = selectedProvince || PROVINCES[0];
@@ -103,7 +103,17 @@ export default function AdminDashboard() {
       return;
     }
     
+    const password = prompt("DANGER ZONE: This operation will PERMANENTLY wipe the entire results database. Please enter the master admin password to confirm this action:");
+    if (!password) return;
+
     setLoading(true);
+    const isValid = await verifyAdminPassword(password);
+    if (!isValid) {
+      alert("Unauthorized: Incorrect admin password.");
+      setLoading(false);
+      return;
+    }
+
     const result = await deleteAllData();
     if (result.success) {
       alert("Database purged successfully.");
@@ -128,7 +138,18 @@ export default function AdminDashboard() {
       return;
     }
     
+    // Additional password verification for security
+    const password = prompt("ADMIN AUTHORIZATION REQUIRED: Please enter the admin password to confirm deletion of this candidate's history:");
+    if (!password) return;
+    
     setLoading(true);
+    const isValid = await verifyAdminPassword(password);
+    if (!isValid) {
+      alert("Unauthorized: Incorrect admin password.");
+      setLoading(false);
+      return;
+    }
+
     // Delete all related records for this person in this group
     const results = await Promise.all(ids.map(id => deleteStudent(id)));
     const allSuccessful = results.every(r => r.success);
@@ -164,8 +185,8 @@ export default function AdminDashboard() {
     return groups;
   }, [data]);
 
-  const needsProvinceFilter = activeTab === "do_province" || activeTab === "open_province";
-  const needsDistrictFilter = activeTab === "do_district" || activeTab === "open_district";
+  const needsProvinceFilter = activeTab === "limited_province" || activeTab === "open_province";
+  const needsDistrictFilter = activeTab === "limited_district" || activeTab === "open_district";
   const needsSubjectFilter = !activeTab.includes("ranking");
 
   return (
@@ -196,11 +217,11 @@ export default function AdminDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <TabsList className="flex flex-wrap h-auto p-2 bg-neutral-100/50 backdrop-blur-sm rounded-[2rem] gap-2 border shadow-inner">
           {[
-            { v: "do_island", l: "Do Island" },
+            { v: "limited_island", l: "Limited Island" },
             { v: "open_island", l: "Open Island" },
-            { v: "do_province", l: "Do Province" },
+            { v: "limited_province", l: "Limited Province" },
             { v: "open_province", l: "Open Province" },
-            { v: "do_district", l: "Do District" },
+            { v: "limited_district", l: "Limited District" },
             { v: "open_district", l: "Open District" },
             { v: "iq_ranking", l: "IQ Peak" },
             { v: "gk_ranking", l: "GK Peak" }
