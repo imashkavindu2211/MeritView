@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { getAdminRankings, adminLogout, deleteAllData, getSystemConfig, toggleConfig, deleteStudent } from "@/app/actions";
 import { StudentResult } from "@/types";
@@ -123,20 +123,46 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleDeleteSingle(id: string, name: string) {
-    if (!confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+  async function handleDeleteSingle(ids: string[], name: string) {
+    if (!confirm(`Are you sure you want to delete all records for ${name}? This action cannot be undone.`)) {
       return;
     }
     
     setLoading(true);
-    const result = await deleteStudent(id);
-    if (result.success) {
+    // Delete all related records for this person in this group
+    const results = await Promise.all(ids.map(id => deleteStudent(id)));
+    const allSuccessful = results.every(r => r.success);
+    
+    if (allSuccessful) {
       fetchData();
     } else {
-      alert("Error deleting student: " + result.error);
+      alert("Error deleting some student records.");
+      fetchData();
     }
     setLoading(false);
   }
+
+  const groupedData = useMemo(() => {
+    const groups: (StudentResult & { subjects: string[], allIds: string[] })[] = [];
+    const nicMap = new Map<string, number>();
+
+    data.forEach((student) => {
+      // Group by NIC AND Category (since Open/Do are different contexts usually)
+      const key = `${student.nic}-${student.category}`;
+      if (nicMap.has(key)) {
+        const index = nicMap.get(key)!;
+        if (!groups[index].subjects.includes(student.subject)) {
+          groups[index].subjects.push(student.subject);
+          groups[index].allIds.push(student.id);
+        }
+      } else {
+        nicMap.set(key, groups.length);
+        groups.push({ ...student, subjects: [student.subject], allIds: [student.id] });
+      }
+    });
+
+    return groups;
+  }, [data]);
 
   const needsProvinceFilter = activeTab === "do_province" || activeTab === "open_province";
   const needsDistrictFilter = activeTab === "do_district" || activeTab === "open_district";
@@ -276,13 +302,13 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.map((student, index) => (
-                      <TableRow key={student.id} className="group hover:bg-red-50/50 transition-all border-b last:border-0 border-neutral-100">
+                    {groupedData.map((student, index) => (
+                      <TableRow key={`${student.nic}-${student.category}`} className="group hover:bg-red-50/50 transition-all border-b last:border-0 border-neutral-100">
                         <TableCell className="py-6 text-center">
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={() => handleDeleteSingle(student.id!, student.name)}
+                            onClick={() => handleDeleteSingle(student.allIds, student.name)}
                             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
                           >
                             <Trash2 className="w-5 h-5" />
@@ -306,12 +332,16 @@ export default function AdminDashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                             <div className="bg-primary/10 px-3 py-1 rounded-lg">
+                          <div className="flex flex-col gap-2">
+                             <div className="bg-primary/10 px-3 py-1 rounded-lg w-fit">
                                 <p className="text-xs font-black text-primary uppercase tracking-tighter">{student.category}</p>
                              </div>
-                             <div className="bg-secondary/10 px-3 py-1 rounded-lg">
-                                <p className="text-xs font-black text-secondary-foreground uppercase tracking-tighter">{student.subject}</p>
+                             <div className="flex flex-wrap gap-1.5 min-w-[200px]">
+                                {student.subjects.map((sub, i) => (
+                                  <div key={i} className="bg-secondary/10 px-3 py-1 rounded-lg border border-secondary/20">
+                                    <p className="text-xs font-black text-secondary-foreground uppercase tracking-tighter">{sub}</p>
+                                  </div>
+                                ))}
                              </div>
                           </div>
                         </TableCell>

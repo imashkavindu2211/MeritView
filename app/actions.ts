@@ -233,7 +233,7 @@ export async function getAdminRankings(
   }
 ) {
   try {
-    let query = supabase.from("students_results").select("id, name, province, district, category, subject, iq_marks, gk_marks, total_marks, created_at");
+    let query = supabase.from("students_results").select("id, nic, name, province, district, category, subject, iq_marks, gk_marks, total_marks, created_at");
 
     if (params.category) query = query.eq("category", params.category);
     if (params.subject) query = query.eq("subject", params.subject);
