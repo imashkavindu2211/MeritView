@@ -15,6 +15,7 @@ interface SubjectAutocompleteProps {
   className?: string;
   showAllOption?: boolean;
   clearOnSelect?: boolean;
+  disabled?: boolean;
 }
 
 export function SubjectAutocomplete({ 
@@ -26,7 +27,8 @@ export function SubjectAutocomplete({
   onSelect,
   className,
   showAllOption = false,
-  clearOnSelect = false
+  clearOnSelect = false,
+  disabled = false
 }: SubjectAutocompleteProps) {
   const [query, setQuery] = useState(defaultValue);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -34,7 +36,7 @@ export function SubjectAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query.length > 0 && isOpen) {
+    if (query.length > 0 && isOpen && !disabled) {
       let filtered = (SUBJECTS as unknown as string[]).filter(s => 
         s.toLowerCase().includes(query.toLowerCase())
       );
@@ -46,12 +48,12 @@ export function SubjectAutocomplete({
       }
       
       setSuggestions(limited);
-    } else if (isOpen && query.length === 0 && showAllOption) {
+    } else if (isOpen && query.length === 0 && showAllOption && !disabled) {
       setSuggestions(["ALL_SUBJECTS"]);
     } else {
       setSuggestions([]);
     }
-  }, [query, isOpen, showAllOption]);
+  }, [query, isOpen, showAllOption, disabled]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -64,6 +66,7 @@ export function SubjectAutocomplete({
   }, []);
 
   const handleSelect = (subject: string) => {
+    if (disabled) return;
     const displayValue = subject === "ALL_SUBJECTS" ? "All Subjects" : subject;
     setQuery(clearOnSelect ? "" : displayValue);
     setIsOpen(false);
@@ -71,6 +74,7 @@ export function SubjectAutocomplete({
   };
 
   const handleClear = () => {
+    if (disabled) return;
     setQuery("");
     setIsOpen(false);
     if (onSelect) onSelect("");
@@ -89,14 +93,15 @@ export function SubjectAutocomplete({
             setQuery(e.target.value);
             setIsOpen(true);
           }}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => !disabled && setIsOpen(true)}
           placeholder={placeholder}
           required={required}
+          disabled={disabled}
           className="pr-10"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-muted-foreground">
           {query ? (
-            <X className="w-4 h-4 cursor-pointer hover:text-foreground" onClick={handleClear} />
+            <X className={`w-4 h-4 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-foreground'}`} onClick={handleClear} />
           ) : (
             <Search className="w-4 h-4" />
           )}

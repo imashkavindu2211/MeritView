@@ -18,6 +18,7 @@ export default function EnterMarks() {
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [nicError, setNicError] = useState(false);
 
   const addSubject = (s: string) => {
     if (s && s !== "" && !selectedSubjects.includes(s)) {
@@ -50,7 +51,7 @@ export default function EnterMarks() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto py-16 px-4 sm:px-6">
+    <div className="w-full max-w-3xl mx-auto py-6 md:py-16 px-3 sm:px-8">
       <Card className="border-0 shadow-2xl shadow-primary/10 rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-primary/5">
         <div className="h-3 bg-gradient-to-r from-primary/50 to-primary w-full" />
         <CardHeader className="text-center space-y-4 pb-10 pt-12">
@@ -83,12 +84,34 @@ export default function EnterMarks() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label htmlFor="nic" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">NIC Number</Label>
-                  <Input id="nic" name="nic" placeholder="e.g. 199912345678" required className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
+                  <Input 
+                    id="nic" 
+                    name="nic" 
+                    placeholder="e.g. 199912345678" 
+                    required 
+                    disabled={loading} 
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    onInput={(e) => {
+                      if (/[^0-9]/.test(e.currentTarget.value)) {
+                        setNicError(true);
+                        setTimeout(() => setNicError(false), 2000);
+                      }
+                      e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '');
+                    }}
+                    className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" 
+                  />
+                  {nicError && (
+                    <p className="text-[10px] text-destructive font-black animate-bounce mt-1 ml-1 uppercase tracking-widest">
+                      ⚠️ Please enter digits only! / ඉලක්කම් පමණක් ඇතුලත් කරන්න.
+                    </p>
+                  )}
+                  <p className="text-[10px] text-rose-500 font-bold ml-1">V අකුර රහිතව ඔබගේ NIC number එක ඇතුලත් කරන්න.</p>
                 </div>
                 
                 <div className="space-y-3">
                   <Label htmlFor="name" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Full Name</Label>
-                  <Input id="name" name="name" placeholder="Candidate Name" required className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
+                  <Input id="name" name="name" placeholder="Candidate Name" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
                 </div>
 
                 <div className="space-y-3">
@@ -96,9 +119,10 @@ export default function EnterMarks() {
                   <select 
                     id="province" 
                     name="province" 
-                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground"
+                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                     defaultValue=""
+                    disabled={loading}
                     onChange={(e) => setSelectedProvince(e.target.value)}
                   >
                     <option value="" disabled className="bg-white text-foreground">Select province</option>
@@ -111,9 +135,10 @@ export default function EnterMarks() {
                   <select 
                     id="district" 
                     name="district" 
-                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground"
+                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                     defaultValue=""
+                    disabled={loading}
                   >
                     <option value="" disabled className="bg-white text-foreground">Select district</option>
                     {selectedProvince && PROVINCE_DISTRICTS[selectedProvince].map((d) => <option key={d} value={d} className="bg-white text-foreground">{d}</option>)}
@@ -125,9 +150,10 @@ export default function EnterMarks() {
                   <select 
                     id="category" 
                     name="category" 
-                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground"
+                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                     defaultValue=""
+                    disabled={loading}
                   >
                     <option value="" disabled className="bg-white text-foreground">Select Type</option>
                     {CATEGORIES.map((c) => <option key={c} value={c} className="bg-white text-foreground">{c}</option>)}
@@ -141,8 +167,8 @@ export default function EnterMarks() {
                       <Badge key={s} className="px-4 py-2 rounded-xl bg-primary/10 text-primary border-primary/20 flex items-center gap-2 group animate-in zoom-in-95 duration-200">
                         <span className="font-bold text-xs">{s}</span>
                         <X 
-                          className="w-4 h-4 cursor-pointer hover:bg-primary/20 rounded-full p-0.5 transition-colors" 
-                          onClick={() => removeSubject(s)} 
+                          className={`w-4 h-4 ${loading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-primary/20 rounded-full p-0.5 transition-colors'}`} 
+                          onClick={() => !loading && removeSubject(s)} 
                         />
                       </Badge>
                     ))}
@@ -152,6 +178,7 @@ export default function EnterMarks() {
                     onSelect={(s) => addSubject(s)}
                     className="h-14"
                     clearOnSelect={true}
+                    disabled={loading}
                   />
                   {/* Hidden inputs to send multiple subject values */}
                   {selectedSubjects.map(s => (
@@ -173,12 +200,12 @@ export default function EnterMarks() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label htmlFor="iq_marks" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">IQ Marks</Label>
-                  <Input id="iq_marks" name="iq_marks" type="number" min="0" max="100" placeholder="0-100" required className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
+                  <Input id="iq_marks" name="iq_marks" type="number" min="0" max="100" placeholder="0-100" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
                 </div>
                 
                 <div className="space-y-3">
                   <Label htmlFor="gk_marks" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">GK Marks</Label>
-                  <Input id="gk_marks" name="gk_marks" type="number" min="0" max="100" placeholder="0-100" required className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
+                  <Input id="gk_marks" name="gk_marks" type="number" min="0" max="100" placeholder="0-100" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
                 </div>
               </div>
             </div>

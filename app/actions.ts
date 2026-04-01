@@ -16,11 +16,13 @@ export async function submitMarks(formData: FormData) {
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
 
-    // Check system config
+    // Check system config - BYPASSED AS REQUESTED
+    /*
     const config = await getSystemConfig();
     if (!config.marks_entry) {
       return { success: false, error: "Marks submission is currently disabled by the administrator." };
     }
+    */
 
     if (!nic || !name || !province || !district || !category || subjects.length === 0 || isNaN(iq_marks) || isNaN(gk_marks)) {
       return { success: false, error: "All fields are required and subjects must be selected." };
@@ -67,11 +69,13 @@ export async function searchStudent(nic: string): Promise<{ success: boolean; da
       return { success: false, error: "NIC is required." };
     }
 
-    // Check system config
+    // Check system config - BYPASSED AS REQUESTED
+    /*
     const config = await getSystemConfig();
     if (!config.view_rankings) {
       return { success: false, error: "Result viewing is currently disabled by the administrator." };
     }
+    */
 
     const { data, error } = await supabase
       .from("students_results")
@@ -93,58 +97,80 @@ export async function searchStudent(nic: string): Promise<{ success: boolean; da
   }
 }
 
-export async function getStudentRank(resultId: string, type: 'island' | 'province' | 'district') {
+export async function getStudentRank(
+  resultId: string, 
+  type: 'island' | 'province' | 'district',
+  sortBy: 'total_marks' | 'iq_marks' | 'gk_marks' = 'total_marks',
+  scope: 'subject' | 'category' = 'subject',
+  overrideCategory?: 'Open' | 'Limited'
+) {
   try {
     const { data: student, error: studentError } = await supabase
       .from("students_results")
       .select("*")
       .eq("id", resultId)
       .single();
-
+ 
     if (studentError || !student) {
       return { rank: null, totalCandidates: 0, error: "Student not found" };
     }
+ 
+    const targetCategory = overrideCategory || student.category;
 
-    let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
-    
-    // Crucially: Filter by category and subject for all rankings as requested
-    query = query.eq('category', student.category).eq('subject', student.subject);
+    if (scope === 'subject') {
+      // Legacy logic remains correct for subject-specific (one row per student per subject)
+      let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
+      query = query.eq('category', targetCategory).eq('subject', student.subject);
+      
+      if (type === 'province') query = query.eq('province', student.province);
+      else if (type === 'district') query = query.eq('district', student.district);
 
-    if (type === 'province') {
-      query = query.eq('province', student.province);
-    } else if (type === 'district') {
-      query = query.eq('district', student.district);
+      const { count: totalCandidates } = await query;
+
+      let higherScoresQuery = supabase
+        .from("students_results")
+        .select("id", { count: 'exact', head: true })
+        .eq('category', targetCategory)
+        .eq('subject', student.subject)
+        .gt(sortBy, student[sortBy]);
+
+      if (type === 'province') higherScoresQuery = higherScoresQuery.eq('province', student.province);
+      else if (type === 'district') higherScoresQuery = higherScoresQuery.eq('district', student.district);
+
+      const { count: higherScoresCount } = await higherScoresQuery;
+      const rank = (higherScoresCount || 0) + 1;
+      return { rank, totalCandidates: totalCandidates || 0 };
+    } else {
+      // OVERALL RANK (Category scope) - Must count UNIQUE NICs
+      // Fetch all candidate records for the pool
+      let query = supabase
+        .from("students_results")
+        .select("nic, " + sortBy)
+        .eq('category', targetCategory);
+
+      if (type === 'province') query = query.eq('province', student.province);
+      else if (type === 'district') query = query.eq('district', student.district);
+
+      const { data: poolData, error: poolError } = await query;
+      if (poolError || !poolData) throw poolError || new Error("Failed to fetch pool");
+
+      // Group by NIC to get unique candidates and their best score in this sort category
+      // (Since per student all subjects have the same marks, any row works)
+      const uniquePool = new Map<string, number>();
+      (poolData as any[]).forEach(row => {
+        uniquePool.set(row.nic, row[sortBy]);
+      });
+
+      const totalCandidates = uniquePool.size;
+      const comparisonValue = student[sortBy];
+      
+      let higherCount = 0;
+      uniquePool.forEach(score => {
+        if (score > comparisonValue) higherCount++;
+      });
+
+      return { rank: higherCount + 1, totalCandidates };
     }
-
-    const { count: totalCandidates, error: countError } = await query;
-
-    if (countError) {
-      return { rank: null, totalCandidates: 0, error: countError.message };
-    }
-
-    let higherScoresQuery = supabase
-      .from("students_results")
-      .select("id", { count: 'exact', head: true })
-      .eq('category', student.category)
-      .eq('subject', student.subject)
-      .gt('total_marks', student.total_marks);
-
-    if (type === 'province') {
-      higherScoresQuery = higherScoresQuery.eq('province', student.province);
-    } else if (type === 'district') {
-      higherScoresQuery = higherScoresQuery.eq('district', student.district);
-    }
-
-    const { count: higherScoresCount, error: rankError } = await higherScoresQuery;
-
-    if (rankError) {
-      return { rank: null, totalCandidates: totalCandidates || 0, error: rankError.message };
-    }
-
-    // Rank is 1 + (number of people with strictly higher marks)
-    const rank = (higherScoresCount || 0) + 1;
-
-    return { rank, totalCandidates: totalCandidates || 0 };
   } catch (error: any) {
     return { rank: null, totalCandidates: 0, error: error.message };
   }
@@ -363,5 +389,20 @@ export async function deleteStudent(id: string) {
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
+  }
+}
+
+export async function getOverallCandidateCount() {
+  try {
+    const { data, error } = await supabase
+      .from("students_results")
+      .select("nic");
+    
+    if (error) throw error;
+    
+    const uniqueNics = new Set(data.map(item => item.nic));
+    return { success: true, count: uniqueNics.size };
+  } catch (err: any) {
+    return { success: false, error: err.message, count: 0 };
   }
 }

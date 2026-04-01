@@ -36,18 +36,18 @@ export default async function Home() {
             </div>
           </Link>
         ) : (
-          <div className="relative flex flex-col items-center justify-center p-10 h-80 bg-neutral-100 border-2 border-neutral-200 rounded-[2.5rem] shadow-inner opacity-75 grayscale cursor-not-allowed">
+          <div className="relative flex flex-col items-center justify-center p-10 h-80 bg-neutral-100 border-2 border-neutral-200 rounded-[2.5rem] shadow-inner opacity-75 grayscale cursor-not-allowed transition-all">
             <div className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-sm">
               <Lock className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="bg-neutral-200 p-6 rounded-3xl mb-8">
+            <div className="bg-neutral-200 p-6 rounded-3xl mb-8 group-hover:scale-110 transition-transform duration-500">
               <ClipboardEdit className="w-12 h-12 text-neutral-400" />
             </div>
-            <h2 className="text-3xl font-extrabold text-neutral-400">
+            <h2 className="text-3xl font-extrabold text-neutral-400 transition-colors">
               Entry Closed
             </h2>
             <p className="text-neutral-400 mt-4 text-center font-medium">
-              Marks submission is currently disabled by administrator.
+              Marks submission is currently disabled. Please check back later.
             </p>
           </div>
         )}
@@ -70,18 +70,18 @@ export default async function Home() {
             </div>
           </Link>
         ) : (
-          <div className="relative flex flex-col items-center justify-center p-10 h-80 bg-neutral-100 border-2 border-neutral-200 rounded-[2.5rem] shadow-inner opacity-75 grayscale cursor-not-allowed">
+          <div className="relative flex flex-col items-center justify-center p-10 h-80 bg-neutral-100 border-2 border-neutral-200 rounded-[2.5rem] shadow-inner opacity-75 grayscale cursor-not-allowed transition-all">
             <div className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-sm">
               <Lock className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="bg-neutral-200 p-6 rounded-3xl mb-8">
+            <div className="bg-neutral-200 p-6 rounded-3xl mb-8 group-hover:scale-110 transition-transform duration-500">
               <Search className="w-12 h-12 text-neutral-400" />
             </div>
-            <h2 className="text-3xl font-extrabold text-neutral-400">
+            <h2 className="text-3xl font-extrabold text-neutral-400 transition-colors">
                Results Hidden
             </h2>
             <p className="text-neutral-400 mt-4 text-center font-medium">
-              Rankings are currently private. Check back later.
+              Rankings are currently private. Please check back later.
             </p>
           </div>
         )}

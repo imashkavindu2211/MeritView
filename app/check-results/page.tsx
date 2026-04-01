@@ -13,6 +13,7 @@ export default function CheckResults() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nicError, setNicError] = useState(false);
 
   async function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,7 +34,7 @@ export default function CheckResults() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-12 px-4 space-y-12">
+    <div className="w-full max-w-4xl mx-auto py-6 md:py-12 px-3 sm:px-4 space-y-12">
       <div className="max-w-xl mx-auto animate-in fade-in zoom-in-95 duration-700">
         <Card className="border-0 shadow-[0_32px_64px_-16px_rgba(210,230,250,0.5)] rounded-[2.5rem] bg-white overflow-hidden ring-1 ring-primary/5">
           <div className="h-3 bg-gradient-to-r from-primary/50 to-primary w-full" />
@@ -56,10 +57,26 @@ export default function CheckResults() {
                     name="nic" 
                     placeholder="e.g. 199912345678" 
                     required 
+                    disabled={loading}
                     className="pl-14 h-16 text-xl rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 transition-all group-hover:bg-white"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    onInput={(e) => {
+                      if (/[^0-9]/.test(e.currentTarget.value)) {
+                        setNicError(true);
+                        setTimeout(() => setNicError(false), 2000);
+                      }
+                      e.currentTarget.value = (e.target as HTMLInputElement).value.replace(/[^0-9]/g, '');
+                    }}
                   />
                   <Search className="w-6 h-6 text-muted-foreground absolute left-5 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
                 </div>
+                {nicError && (
+                  <p className="text-[10px] text-destructive font-black animate-bounce mt-1 ml-2 uppercase tracking-widest">
+                    ⚠️ Please enter digits only! / ඉලක්කම් පමණක් ඇතුලත් කරන්න.
+                  </p>
+                )}
+                <p className="text-[11px] text-rose-500 font-bold ml-2">V අකුර රහිතව ඔබගේ NIC number එක ඇතුලත් කරන්න.</p>
               </div>
 
               {error && (
