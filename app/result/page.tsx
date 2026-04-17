@@ -321,7 +321,7 @@ function ResultPageContent() {
                         <p className="text-3xl font-black text-slate-900 leading-none">
                           {loadingRanks ? <Loader2 className="w-6 h-6 animate-spin text-rose-100" /> : item.rank ? item.rank.toString().padStart(2, '0') : '--'}
                         </p>
-                        <p className="text-[9px] font-bold text-slate-300 uppercase">Pool: {item.total?.toLocaleString()}</p>
+
                       </div>
                     </div>
                   ))}
@@ -352,7 +352,7 @@ function ResultPageContent() {
                                <p className="text-3xl font-black text-slate-700 leading-none">
                                  {loadingRanks ? <Loader2 className="w-6 h-6 animate-spin text-rose-100" /> : item.rank ? item.rank.toString().padStart(2, '0') : '--'}
                                </p>
-                               <p className="text-[9px] font-bold text-slate-300 uppercase">Pool: {ranks.total?.toLocaleString()}</p>
+
                             </div>
                           </div>
                         ))}
