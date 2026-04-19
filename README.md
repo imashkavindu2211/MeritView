@@ -24,7 +24,7 @@ ADMIN_PASSWORD=admin123
 
 ## User Flows
 - Home Page (`/`): Contains the main navigation points.
-- Enter Marks (`/enter-marks`): Allows inputting student results (NIC, Name, Geography, Category, Marks).
+- Enter Marks (`/enter-marks`): Allows inputting student results (NIC, Name, Geography, Marks).
 - Check Result (`/check-results`): Input NIC to observe results. Wait for loading bar if calculated.
 - Admin Panel (`/admin`): Live update dashboard where results can be exported. Default credentials above.
 

@@ -8,7 +8,6 @@ export const DUMMY_STUDENTS = [
     name: "Kamal Perera",
     province: "Western",
     district: "Colombo",
-    category: "Open",
     subject: "Common",
     iq_marks: 85,
     gk_marks: 70,
@@ -19,7 +18,6 @@ export const DUMMY_STUDENTS = [
     name: "Nimal Silva",
     province: "Central",
     district: "Kandy",
-    category: "Limited",
     subject: "Chemistry",
     iq_marks: 90,
     gk_marks: 80,
@@ -30,7 +28,6 @@ export const DUMMY_STUDENTS = [
     name: "Sanduni Fernando",
     province: "Southern",
     district: "Galle",
-    category: "Open",
     subject: "Common",
     iq_marks: 95,
     gk_marks: 85,
@@ -41,7 +38,6 @@ export const DUMMY_STUDENTS = [
     name: "Akindu Wijesinghe",
     province: "Western",
     district: "Gampaha",
-    category: "Limited",
     subject: "Physics",
     iq_marks: 75,
     gk_marks: 90,
@@ -52,7 +48,6 @@ export const DUMMY_STUDENTS = [
     name: "Tharushi De Silva",
     province: "Central",
     district: "Matale",
-    category: "Open",
     subject: "Chemistry",
     iq_marks: 88,
     gk_marks: 78,
@@ -60,6 +55,6 @@ export const DUMMY_STUDENTS = [
   }
 ];
 
-// INSERT INTO public.students_results (nic, name, province, district, category, iq_marks, gk_marks, total_marks) VALUES 
-// ('200012345678', 'Kamal Perera', 'Western', 'Colombo', 'Open', 85, 70, 155),
+// INSERT INTO public.students_results (nic, name, province, district, iq_marks, gk_marks, total_marks) VALUES 
+// ('200012345678', 'Kamal Perera', 'Western', 'Colombo', 85, 70, 155),
 // ...

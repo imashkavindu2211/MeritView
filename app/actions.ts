@@ -11,7 +11,6 @@ export async function submitMarks(formData: FormData) {
     const name = formData.get("name") as string;
     const province = formData.get("province") as string;
     const district = formData.get("district") as string;
-    const category = formData.get("category") as "Open" | "Limited";
     const subjects = formData.getAll("subject") as string[];
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
@@ -24,8 +23,14 @@ export async function submitMarks(formData: FormData) {
     }
     */
 
-    if (!nic || !name || !province || !district || !category || subjects.length === 0 || isNaN(iq_marks) || isNaN(gk_marks)) {
+    const isValid = (marks: number) => marks >= 2 && marks <= 100 && marks % 2 === 0;
+
+    if (!nic || !name || !province || !district || subjects.length === 0 || isNaN(iq_marks) || isNaN(gk_marks)) {
       return { success: false, error: "All fields are required and subjects must be selected." };
+    }
+
+    if (!isValid(iq_marks) || !isValid(gk_marks)) {
+      return { success: false, error: "ඇතුලත්කල ලකුණ වලංගු ලකුනක් නොවේ. නැවත උත්සහා කරන්න." };
     }
 
     const total_marks = iq_marks + gk_marks;
@@ -37,7 +42,6 @@ export async function submitMarks(formData: FormData) {
         name,
         province,
         district,
-        category,
         subject: s,
         iq_marks,
         gk_marks,
@@ -101,8 +105,7 @@ export async function getStudentRank(
   resultId: string, 
   type: 'island' | 'province' | 'district',
   sortBy: 'total_marks' | 'iq_marks' | 'gk_marks' = 'total_marks',
-  scope: 'subject' | 'category' = 'subject',
-  overrideCategory?: 'Open' | 'Limited'
+  scope: 'subject' | 'category' = 'subject'
 ) {
   try {
     const { data: student, error: studentError } = await supabase
@@ -115,12 +118,12 @@ export async function getStudentRank(
       return { rank: null, totalCandidates: 0, error: "Student not found" };
     }
  
-    const targetCategory = overrideCategory || student.category;
+    // Removed category logic
 
     if (scope === 'subject') {
       // Legacy logic remains correct for subject-specific (one row per student per subject)
       let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
-      query = query.eq('category', targetCategory).eq('subject', student.subject);
+      query = query.eq('subject', student.subject);
       
       if (type === 'province') query = query.eq('province', student.province);
       else if (type === 'district') query = query.eq('district', student.district);
@@ -130,7 +133,6 @@ export async function getStudentRank(
       let higherScoresQuery = supabase
         .from("students_results")
         .select("id", { count: 'exact', head: true })
-        .eq('category', targetCategory)
         .eq('subject', student.subject)
         .gt(sortBy, student[sortBy]);
 
@@ -145,8 +147,7 @@ export async function getStudentRank(
       // Fetch all candidate records for the pool
       let query = supabase
         .from("students_results")
-        .select("nic, " + sortBy)
-        .eq('category', targetCategory);
+        .select("nic, " + sortBy);
 
       if (type === 'province') query = query.eq('province', student.province);
       else if (type === 'district') query = query.eq('district', student.district);
@@ -188,12 +189,11 @@ export async function getStudentCandidateStats(resultId: string) {
       return { success: false, error: "Student not found" };
     }
 
-    const { category, subject, province, district } = student;
+    const { subject, province, district } = student;
 
     // Helper for counts
-    const getCount = async (filters: { category?: string; subject?: string; province?: string; district?: string }) => {
+    const getCount = async (filters: { subject?: string; province?: string; district?: string }) => {
       let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
-      if (filters.category) query = query.eq('category', filters.category);
       if (filters.subject) query = query.eq('subject', filters.subject);
       if (filters.province) query = query.eq('province', filters.province);
       if (filters.district) query = query.eq('district', filters.district);
@@ -203,16 +203,16 @@ export async function getStudentCandidateStats(resultId: string) {
 
     // Main Category Counts (Island, Province, District)
     const [catIsland, catProvince, catDistrict] = await Promise.all([
-      getCount({ category }),
-      getCount({ category, province }),
-      getCount({ category, district })
+      getCount({}),
+      getCount({ province }),
+      getCount({ district })
     ]);
 
     // Subject Counts (Island, Province, District)
     const [subIsland, subProvince, subDistrict] = await Promise.all([
-      getCount({ category, subject }),
-      getCount({ category, subject, province }),
-      getCount({ category, subject, district })
+      getCount({ subject }),
+      getCount({ subject, province }),
+      getCount({ subject, district })
     ]);
 
     return {
@@ -225,19 +225,18 @@ export async function getStudentCandidateStats(resultId: string) {
   }
 }
 
-export async function getGlobalCandidateStats(category: string, subject: string) {
+export async function getGlobalCandidateStats(subject: string) {
   try {
     // Helper for counts
-    const getCount = async (filters: { category?: string; subject?: string }) => {
+    const getCount = async (filters: { subject?: string }) => {
       let query = supabase.from("students_results").select("id", { count: 'exact', head: true });
-      if (filters.category) query = query.eq('category', filters.category);
       if (filters.subject) query = query.eq('subject', filters.subject);
       const { count } = await query;
       return count || 0;
     };
 
-    const catTotal = await getCount({ category });
-    const subTotal = await getCount({ category, subject });
+    const catTotal = await getCount({});
+    const subTotal = await getCount({ subject });
 
     return {
       success: true,
@@ -251,7 +250,6 @@ export async function getGlobalCandidateStats(category: string, subject: string)
 
 export async function getAdminRankings(
   params: {
-    category?: "Open" | "Limited";
     subject?: string;
     province?: string;
     district?: string;
@@ -259,9 +257,8 @@ export async function getAdminRankings(
   }
 ) {
   try {
-    let query = supabase.from("students_results").select("id, nic, name, province, district, category, subject, iq_marks, gk_marks, total_marks, created_at");
+    let query = supabase.from("students_results").select("id, nic, name, province, district, subject, iq_marks, gk_marks, total_marks, created_at");
 
-    if (params.category) query = query.eq("category", params.category);
     if (params.subject) query = query.eq("subject", params.subject);
     if (params.province) query = query.eq("province", params.province);
     if (params.district) query = query.eq("district", params.district);

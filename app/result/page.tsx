@@ -55,12 +55,11 @@ function ResultPageContent() {
   const fetchAllRanks = useCallback(async (resultId: string, mode: 'total_marks' | 'iq_marks' | 'gk_marks', allResults: StudentResult[]) => {
     setLoadingRanks(true);
     try {
-      // 1. Fetch Overall Ranks (based on student's actual category)
-      const cat = allResults[0].category;
+      // 1. Fetch Overall Ranks
       const [island, province, district] = await Promise.all([
-        getStudentRank(resultId, "island", mode, "category", cat),
-        getStudentRank(resultId, "province", mode, "category", cat),
-        getStudentRank(resultId, "district", mode, "category", cat)
+        getStudentRank(resultId, "island", mode, "category"),
+        getStudentRank(resultId, "province", mode, "category"),
+        getStudentRank(resultId, "district", mode, "category")
       ]);
 
       setIslandRank({ rank: island.rank, total: island.totalCandidates });
@@ -185,9 +184,7 @@ function ResultPageContent() {
                 <Badge className="text-[8px] font-black uppercase tracking-widest bg-rose-600 text-white border-0 px-3 py-1">
                    Candidate
                 </Badge>
-                <Badge className="text-[8px] font-black uppercase tracking-widest bg-rose-50 text-rose-700 border-rose-100 px-3 py-1">
-                  {data.category === 'Open' ? 'Full Open' : 'Limited'}
-                </Badge>
+
               </div>
               <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
                  <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">{data.name}</h2>
@@ -304,7 +301,7 @@ function ResultPageContent() {
              <div className="space-y-6">
                 <div className="flex items-center gap-3">
                    <Trophy className="w-6 h-6 text-rose-600" />
-                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">NATIONAL RANKING ({data.category === 'Open' ? 'OPEN' : 'LIMITED/DO'})</h3>
+                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">NATIONAL RANKING</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[

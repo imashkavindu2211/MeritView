@@ -36,6 +36,21 @@ export default function EnterMarks() {
     setMessage(null);
     
     const formData = new FormData(e.currentTarget);
+    const iqMarks = Number(formData.get("iq_marks"));
+    const gkMarks = Number(formData.get("gk_marks"));
+
+    // Validation for multiples of 2 between 2 and 100
+    const isValid = (marks: number) => marks >= 2 && marks <= 100 && marks % 2 === 0;
+
+    if (!isValid(iqMarks) || !isValid(gkMarks)) {
+      setMessage({ 
+        type: 'error', 
+        text: 'ඇතුලත්කල ලකුණ වලංගු ලකුනක් නොවේ. නැවත උත්සහා කරන්න.' 
+      });
+      setLoading(false);
+      return;
+    }
+
     const result = await submitMarks(formData);
 
     setLoading(false);
@@ -145,20 +160,6 @@ export default function EnterMarks() {
                   </select>
                 </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="category" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Type</Label>
-                  <select 
-                    id="category" 
-                    name="category" 
-                    className="flex h-14 w-full rounded-2xl border-2 border-input bg-neutral-50/50 px-4 py-2 text-base font-medium transition-all focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 appearance-none text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-                    required
-                    defaultValue=""
-                    disabled={loading}
-                  >
-                    <option value="" disabled className="bg-white text-foreground">Select Type</option>
-                    {CATEGORIES.map((c) => <option key={c} value={c} className="bg-white text-foreground">{c}</option>)}
-                  </select>
-                </div>
 
                 <div className="space-y-4">
                   <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Subjects (Multiple Available)</Label>
@@ -200,12 +201,12 @@ export default function EnterMarks() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label htmlFor="iq_marks" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">IQ Marks</Label>
-                  <Input id="iq_marks" name="iq_marks" type="number" min="0" max="100" placeholder="0-100" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
+                  <Input id="iq_marks" name="iq_marks" type="number" min="2" max="100" step="2" placeholder="2, 4, 6... 100" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
                 </div>
                 
                 <div className="space-y-3">
                   <Label htmlFor="gk_marks" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">GK Marks</Label>
-                  <Input id="gk_marks" name="gk_marks" type="number" min="0" max="100" placeholder="0-100" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
+                  <Input id="gk_marks" name="gk_marks" type="number" min="2" max="100" step="2" placeholder="2, 4, 6... 100" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
                 </div>
               </div>
             </div>

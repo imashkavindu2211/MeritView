@@ -17,7 +17,7 @@ import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("limited_island");
+  const [activeTab, setActiveTab] = useState("island");
   const [data, setData] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -32,14 +32,9 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    let category: "Limited" | "Open" | undefined;
     let sortBy: "total_marks" | "iq_marks" | "gk_marks" = "total_marks";
     let filterProvince = undefined;
     let filterDistrict = undefined;
-
-    // Parse tab config
-    if (activeTab.includes("limited_")) category = "Limited";
-    if (activeTab.includes("open_")) category = "Open";
 
     if (activeTab.includes("province")) filterProvince = selectedProvince || PROVINCES[0];
     if (activeTab.includes("district")) filterDistrict = selectedDistrict || DISTRICTS[0];
@@ -48,7 +43,6 @@ export default function AdminDashboard() {
     if (activeTab === "gk_ranking") sortBy = "gk_marks";
 
     const response = await getAdminRankings({
-      category: category as any,
       subject: (selectedSubject && selectedSubject !== "ALL_SUBJECTS") ? selectedSubject : undefined,
       province: filterProvince,
       district: filterDistrict,
@@ -168,8 +162,8 @@ export default function AdminDashboard() {
     const nicMap = new Map<string, number>();
 
     data.forEach((student) => {
-      // Group by NIC AND Category (since Open/Do are different contexts usually)
-      const key = `${student.nic}-${student.category}`;
+      // Group by NIC
+      const key = student.nic;
       if (nicMap.has(key)) {
         const index = nicMap.get(key)!;
         if (!groups[index].subjects.includes(student.subject)) {
@@ -185,8 +179,8 @@ export default function AdminDashboard() {
     return groups;
   }, [data]);
 
-  const needsProvinceFilter = activeTab === "limited_province" || activeTab === "open_province";
-  const needsDistrictFilter = activeTab === "limited_district" || activeTab === "open_district";
+  const needsProvinceFilter = activeTab === "province";
+  const needsDistrictFilter = activeTab === "district";
   const needsSubjectFilter = !activeTab.includes("ranking");
 
   return (
@@ -217,12 +211,9 @@ export default function AdminDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <TabsList className="flex flex-wrap h-auto p-2 bg-neutral-100/50 backdrop-blur-sm rounded-[2rem] gap-2 border shadow-inner">
           {[
-            { v: "limited_island", l: "Limited Island" },
-            { v: "open_island", l: "Open Island" },
-            { v: "limited_province", l: "Limited Province" },
-            { v: "open_province", l: "Open Province" },
-            { v: "limited_district", l: "Limited District" },
-            { v: "open_district", l: "Open District" },
+            { v: "island", l: "Island Ranking" },
+            { v: "province", l: "Province Ranking" },
+            { v: "district", l: "District Ranking" },
             { v: "iq_ranking", l: "IQ Peak" },
             { v: "gk_ranking", l: "GK Peak" }
           ].map((tab) => (
@@ -324,7 +315,7 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {groupedData.map((student, index) => (
-                      <TableRow key={`${student.nic}-${student.category}`} className="group hover:bg-red-50/50 transition-all border-b last:border-0 border-neutral-100">
+                      <TableRow key={student.nic} className="group hover:bg-red-50/50 transition-all border-b last:border-0 border-neutral-100">
                         <TableCell className="py-6 text-center">
                           <Button 
                             variant="ghost" 
@@ -354,9 +345,7 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-2">
-                             <div className="bg-primary/10 px-3 py-1 rounded-lg w-fit">
-                                <p className="text-xs font-black text-primary uppercase tracking-tighter">{student.category}</p>
-                             </div>
+
                              <div className="flex flex-wrap gap-1.5 min-w-[200px]">
                                 {student.subjects.map((sub, i) => (
                                   <div key={i} className="bg-secondary/10 px-3 py-1 rounded-lg border border-secondary/20">

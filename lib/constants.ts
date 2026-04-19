@@ -25,11 +25,6 @@ export const PROVINCE_DISTRICTS: Record<string, string[]> = {
 export const DISTRICTS = Object.values(PROVINCE_DISTRICTS).flat() as readonly string[];
 
 
-export const CATEGORIES = [
-  "Open",
-  "Limited"
-] as const;
-
 export const SUBJECTS = [
   "101 - Chemistry",
   "102 - Physics",
