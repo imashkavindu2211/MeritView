@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PROVINCES, PROVINCE_DISTRICTS, CATEGORIES, SUBJECTS } from "@/lib/constants";
+import { PROVINCES, PROVINCE_DISTRICTS, SUBJECTS } from "@/lib/constants";
 import { submitMarks } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
