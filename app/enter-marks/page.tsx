@@ -22,6 +22,10 @@ export default function EnterMarks() {
 
   const addSubject = (s: string) => {
     if (s && s !== "" && !selectedSubjects.includes(s)) {
+      if (selectedSubjects.length >= 3) {
+        setMessage({ type: 'error', text: 'ඔබට තෝරාගත හැක්කේ උපරිම විෂයන් 3ක් පමණි. (You can only select up to 3 subjects.)' });
+        return;
+      }
       setSelectedSubjects([...selectedSubjects, s]);
     }
   };

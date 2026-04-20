@@ -331,7 +331,15 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {rankedData.map((student, index) => (
-                      <TableRow key={student.nic} className="group hover:bg-red-50/50 transition-all border-b last:border-0 border-neutral-100">
+                      <TableRow 
+                        key={student.nic} 
+                        className={`group transition-all border-b last:border-0 border-neutral-100 ${
+                          student.rank === 1 ? 'bg-amber-50/40 hover:bg-amber-50' : 
+                          student.rank === 2 ? 'bg-slate-50/40 hover:bg-slate-50' : 
+                          student.rank === 3 ? 'bg-orange-50/40 hover:bg-orange-50' : 
+                          'hover:bg-red-50/50'
+                        }`}
+                      >
                         <TableCell className="py-6 text-center">
                           <Button 
                             variant="ghost" 
@@ -344,14 +352,18 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center">
-                            <span className={`inline-flex items-center justify-center w-10 h-10 rounded-2xl font-black text-sm shadow-sm transition-all group-hover:scale-110 ${
-                              student.rank === 1 ? 'bg-amber-400 text-white shadow-amber-200' : 
-                              student.rank === 2 ? 'bg-slate-300 text-white shadow-slate-100' : 
-                              student.rank === 3 ? 'bg-orange-300 text-white shadow-orange-100' : 
-                              'bg-neutral-100 text-muted-foreground'
-                            }`}>
-                              {student.rank}
-                            </span>
+                            {student.rank <= 3 ? (
+                              <div className={`
+                                w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white text-xs shadow-lg transform -rotate-3 transition-all group-hover:rotate-0
+                                ${student.rank === 1 ? 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-200' : ''}
+                                ${student.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-500 shadow-slate-200' : ''}
+                                ${student.rank === 3 ? 'bg-gradient-to-br from-orange-300 to-orange-500 shadow-orange-200' : ''}
+                              `}>
+                                 #{student.rank}
+                              </div>
+                            ) : (
+                              <span className="font-black text-muted-foreground text-sm tabular-nums">{student.rank}</span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -383,7 +395,12 @@ export default function AdminDashboard() {
                         <TableCell className="text-right font-bold tabular-nums text-foreground opacity-70">{student.iq_marks}</TableCell>
                         <TableCell className="text-right font-bold tabular-nums text-foreground opacity-70">{student.gk_marks}</TableCell>
                         <TableCell className="text-right pr-10">
-                          <span className="inline-block py-2 px-6 rounded-2xl bg-foreground text-background font-black text-xl tabular-nums shadow-lg shadow-foreground/10 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-primary/20 transition-all">
+                          <span className={`inline-block py-2 px-6 rounded-2xl font-black text-xl tabular-nums shadow-lg transition-all ${
+                            student.rank === 1 ? 'bg-amber-500 text-white' : 
+                            student.rank === 2 ? 'bg-slate-400 text-white' : 
+                            student.rank === 3 ? 'bg-orange-400 text-white' : 
+                            'bg-foreground text-background group-hover:bg-primary group-hover:text-primary-foreground'
+                          }`}>
                             {student.total_marks}
                           </span>
                         </TableCell>

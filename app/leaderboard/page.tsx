@@ -99,7 +99,7 @@ export default function Leaderboard() {
         lastScore = currentScore;
       }
       return { ...student, rank: lastRank };
-    }).slice(0, 100);
+    });
   }, [data, activeTab]);
 
   const needsProvinceFilter = activeTab === "province";
@@ -119,7 +119,7 @@ export default function Leaderboard() {
           <div className="space-y-2">
             <h1 className="text-3xl md:text-6xl font-black tracking-tighter">Merit <span className="text-primary italic">Leaderboard</span></h1>
             <p className="text-gray-400 font-medium text-sm md:text-lg max-w-2xl px-4">
-              Celebrating excellence and dedication. See where you stand among the top 100 performers.
+              Celebrating excellence and dedication. See where you stand among all registered performers.
             </p>
           </div>
         </div>
@@ -219,26 +219,35 @@ export default function Leaderboard() {
                     </TableHeader>
                     <TableBody>
                       {rankedData.map((student, index) => (
-                        <TableRow key={index} className="group hover:bg-primary/5 transition-all border-b border-neutral-100 last:border-0">
+                        <TableRow 
+                          key={index} 
+                          className={`group transition-all border-b border-neutral-100 last:border-0 ${
+                            student.rank === 1 ? 'bg-amber-50/40 hover:bg-amber-50' : 
+                            student.rank === 2 ? 'bg-slate-50/40 hover:bg-slate-50' : 
+                            student.rank === 3 ? 'bg-orange-50/40 hover:bg-orange-50' : 
+                            'hover:bg-primary/5'
+                          }`}
+                        >
                           <TableCell className="py-8">
-                            <div className="flex justify-center">
-                              {student.rank === 1 ? (
-                                <div className="relative">
-                                  <div className="absolute -inset-2 bg-amber-400/20 blur rounded-full animate-pulse" />
-                                  <div className="relative w-12 h-12 bg-amber-400 text-white rounded-2xl flex items-center justify-center font-black shadow-lg">
-                                    <Medal className="w-6 h-6" />
+                            <div className="flex justify-center items-center">
+                              {student.rank <= 3 ? (
+                                <div className={`
+                                  relative flex items-center justify-center w-14 h-14 rounded-2xl shadow-xl font-black text-white transform -rotate-2 transition-all group-hover:rotate-0 group-hover:scale-110
+                                  ${student.rank === 1 ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-amber-200' : ''}
+                                  ${student.rank === 2 ? 'bg-gradient-to-br from-slate-300 via-slate-400 to-slate-500 shadow-slate-200' : ''}
+                                  ${student.rank === 3 ? 'bg-gradient-to-br from-orange-300 via-orange-400 to-orange-500 shadow-orange-200' : ''}
+                                `}>
+                                  <span className="text-xl">#{student.rank}</span>
+                                  <div className="absolute -top-2 -right-2 bg-white rounded-full p-1.5 shadow-lg border border-neutral-100">
+                                     <Trophy className={`w-3.5 h-3.5 ${
+                                       student.rank === 1 ? 'text-amber-500' : 
+                                       student.rank === 2 ? 'text-slate-400' : 
+                                       'text-orange-400'
+                                     }`} />
                                   </div>
                                 </div>
-                              ) : student.rank === 2 ? (
-                                <div className="w-11 h-11 bg-slate-300 text-white rounded-2xl flex items-center justify-center font-black shadow-md">
-                                  <Medal className="w-5 h-5" />
-                                </div>
-                              ) : student.rank === 3 ? (
-                                <div className="w-10 h-10 bg-orange-300 text-white rounded-2xl flex items-center justify-center font-black shadow-md">
-                                  <Medal className="w-4 h-4" />
-                                </div>
                               ) : (
-                                <span className="font-black text-muted-foreground text-lg">{student.rank}</span>
+                                <span className="font-black text-muted-foreground text-lg tabular-nums">{student.rank}</span>
                               )}
                             </div>
                           </TableCell>
@@ -255,7 +264,10 @@ export default function Leaderboard() {
                           </TableCell>
                           <TableCell className="text-right pr-12">
                             <span className={`inline-block py-2 px-6 rounded-2xl font-black text-2xl tabular-nums shadow-sm transition-all ${
-                              student.rank === 1 ? 'bg-primary text-white scale-110 shadow-primary/20' : 'bg-neutral-100 text-foreground group-hover:bg-primary/10'
+                              student.rank === 1 ? 'bg-amber-500 text-white scale-110 shadow-amber-200' : 
+                              student.rank === 2 ? 'bg-slate-400 text-white scale-105 shadow-slate-200' : 
+                              student.rank === 3 ? 'bg-orange-400 text-white scale-105 shadow-orange-200' : 
+                              'bg-neutral-100 text-foreground group-hover:bg-primary/10'
                             }`}>
                               {activeTab === "iq_ranking" ? student.iq_marks : 
                                activeTab === "gk_ranking" ? student.gk_marks : 
@@ -271,16 +283,27 @@ export default function Leaderboard() {
                 {/* Mobile View Cards */}
                 <div className="md:hidden divide-y divide-neutral-100">
                   {rankedData.map((student, index) => (
-                    <div key={index} className="p-5 flex items-center gap-5 active:bg-neutral-50 transition-colors">
-                        <div className="flex-shrink-0 w-12 text-center">
-                          {student.rank === 1 ? (
-                             <Medal className="w-10 h-10 text-amber-400 mx-auto" />
-                          ) : student.rank === 2 ? (
-                             <Medal className="w-9 h-9 text-slate-300 mx-auto" />
-                          ) : student.rank === 3 ? (
-                             <Medal className="w-8 h-8 text-orange-300 mx-auto" />
+                    <div 
+                      key={index} 
+                      className={`p-5 flex items-center gap-5 transition-colors ${
+                        student.rank === 1 ? 'bg-amber-50/30' : 
+                        student.rank === 2 ? 'bg-slate-50/30' : 
+                        student.rank === 3 ? 'bg-orange-50/30' : 
+                        'active:bg-neutral-50'
+                      }`}
+                    >
+                        <div className="flex-shrink-0 w-14 text-center">
+                          {student.rank <= 3 ? (
+                            <div className={`
+                              relative w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-base shadow-lg
+                              ${student.rank === 1 ? 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-100' : ''}
+                              ${student.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-500 shadow-slate-100' : ''}
+                              ${student.rank === 3 ? 'bg-gradient-to-br from-orange-300 to-orange-500 shadow-orange-100' : ''}
+                            `}>
+                               #{student.rank}
+                            </div>
                           ) : (
-                            <span className="font-black text-xl text-muted-foreground">{student.rank}</span>
+                            <span className="font-black text-xl text-muted-foreground tabular-nums">{student.rank}</span>
                           )}
                         </div>
                         
@@ -296,7 +319,10 @@ export default function Leaderboard() {
 
                         <div className="flex-shrink-0">
                           <div className={`px-4 py-2 rounded-xl font-black text-lg tabular-nums shadow-sm ${
-                            student.rank === 1 ? 'bg-primary text-white' : 'bg-neutral-100 text-foreground'
+                            student.rank === 1 ? 'bg-amber-500 text-white' : 
+                            student.rank === 2 ? 'bg-slate-400 text-white' : 
+                            student.rank === 3 ? 'bg-orange-400 text-white' : 
+                            'bg-neutral-100 text-foreground'
                           }`}>
                             {activeTab === "iq_ranking" ? student.iq_marks : 
                              activeTab === "gk_ranking" ? student.gk_marks : 

@@ -145,16 +145,30 @@ export async function getStudentRank(
     } else {
       // OVERALL RANK (Category scope) - Must count UNIQUE NICs
       // Fetch all candidate records for the pool
-      let query = supabase
-        .from("students_results")
-        .select("nic, " + sortBy)
-        .limit(100000);
+      let poolData: any[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let finished = false;
 
-      if (type === 'province') query = query.eq('province', student.province);
-      else if (type === 'district') query = query.eq('district', student.district);
+      while (!finished) {
+        let pageQuery = supabase
+          .from("students_results")
+          .select("nic, " + sortBy)
+          .range(from, from + pageSize - 1);
 
-      const { data: poolData, error: poolError } = await query;
-      if (poolError || !poolData) throw poolError || new Error("Failed to fetch pool");
+        if (type === 'province') pageQuery = pageQuery.eq('province', student.province);
+        else if (type === 'district') pageQuery = pageQuery.eq('district', student.district);
+
+        const { data, error } = await pageQuery;
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          finished = true;
+        } else {
+          poolData = poolData.concat(data);
+          if (data.length < pageSize) finished = true;
+          else from += pageSize;
+        }
+      }
 
       // Group by NIC to get unique candidates and their best score in this sort category
       // (Since per student all subjects have the same marks, any row works)
@@ -258,24 +272,41 @@ export async function getAdminRankings(
   }
 ) {
   try {
-    let query = supabase.from("students_results").select("id, nic, name, province, district, subject, iq_marks, gk_marks, total_marks, created_at");
+    let allData: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let finished = false;
 
-    if (params.subject) query = query.eq("subject", params.subject);
-    if (params.province) query = query.eq("province", params.province);
-    if (params.district) query = query.eq("district", params.district);
+    while (!finished) {
+      let pageQuery = supabase.from("students_results").select("id, nic, name, province, district, subject, iq_marks, gk_marks, total_marks, created_at");
 
-    const sortColumn = params.sortBy || "total_marks";
-    query = query.order(sortColumn, { ascending: false });
+      if (params.subject) pageQuery = pageQuery.eq("subject", params.subject);
+      if (params.province) pageQuery = pageQuery.eq("province", params.province);
+      if (params.district) pageQuery = pageQuery.eq("district", params.district);
 
-    // In a real app we might paginate
-    const { data, error } = await query.limit(1000);
+      const sortColumn = params.sortBy || "total_marks";
+      pageQuery = pageQuery.order(sortColumn, { ascending: false }).range(from, from + pageSize - 1);
 
-    if (error) {
-      console.error(error);
-      return { success: false, error: error.message, data: [] };
+      const { data, error } = await pageQuery;
+
+      if (error) {
+        console.error(error);
+        return { success: false, error: error.message, data: [] };
+      }
+
+      if (!data || data.length === 0) {
+        finished = true;
+      } else {
+        allData = allData.concat(data);
+        if (data.length < pageSize) finished = true;
+        else from += pageSize;
+      }
+      
+      // Safety cap to avoid infinite loops if data is huge, but high enough for 200k
+      if (allData.length >= 200000) finished = true;
     }
 
-    return { success: true, data: data as StudentResult[] };
+    return { success: true, data: allData as StudentResult[] };
   } catch (error: any) {
     return { success: false, error: error.message, data: [] };
   }
@@ -392,14 +423,31 @@ export async function deleteStudent(id: string) {
 
 export async function getOverallCandidateCount() {
   try {
-    const { data, error } = await supabase
-      .from("students_results")
-      .select("nic")
-      .limit(100000);
+    let allData: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let finished = false;
+
+    while (!finished) {
+      const { data, error } = await supabase
+        .from("students_results")
+        .select("nic")
+        .range(from, from + pageSize - 1);
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        finished = true;
+      } else {
+        allData = allData.concat(data);
+        if (data.length < pageSize) finished = true;
+        else from += pageSize;
+      }
+
+      if (allData.length >= 200000) finished = true;
+    }
     
-    if (error) throw error;
-    
-    const uniqueNics = new Set(data.map(item => item.nic));
+    const uniqueNics = new Set(allData.map(item => item.nic));
     return { success: true, count: uniqueNics.size };
   } catch (err: any) {
     return { success: false, error: err.message, count: 0 };
