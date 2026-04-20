@@ -147,7 +147,8 @@ export async function getStudentRank(
       // Fetch all candidate records for the pool
       let query = supabase
         .from("students_results")
-        .select("nic, " + sortBy);
+        .select("nic, " + sortBy)
+        .limit(100000);
 
       if (type === 'province') query = query.eq('province', student.province);
       else if (type === 'district') query = query.eq('district', student.district);
@@ -393,7 +394,8 @@ export async function getOverallCandidateCount() {
   try {
     const { data, error } = await supabase
       .from("students_results")
-      .select("nic");
+      .select("nic")
+      .limit(100000);
     
     if (error) throw error;
     

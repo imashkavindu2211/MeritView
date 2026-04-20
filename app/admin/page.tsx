@@ -157,8 +157,8 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  const groupedData = useMemo(() => {
-    const groups: (StudentResult & { subjects: string[], allIds: string[] })[] = [];
+  const rankedData = useMemo(() => {
+    const groups: (StudentResult & { subjects: string[], allIds: string[], rank: number })[] = [];
     const nicMap = new Map<string, number>();
 
     data.forEach((student) => {
@@ -172,12 +172,28 @@ export default function AdminDashboard() {
         }
       } else {
         nicMap.set(key, groups.length);
-        groups.push({ ...student, subjects: [student.subject], allIds: [student.id] });
+        groups.push({ ...student, subjects: [student.subject], allIds: [student.id], rank: 0 });
       }
     });
 
+    // Apply competition ranking
+    let lastScore = -1;
+    let lastRank = 1;
+    groups.forEach((student, index) => {
+      const sortBy = activeTab === "iq_ranking" ? "iq_marks" : 
+                     activeTab === "gk_ranking" ? "gk_marks" : 
+                     "total_marks";
+      const currentScore = student[sortBy];
+      
+      if (currentScore !== lastScore) {
+        lastRank = index + 1;
+        lastScore = currentScore;
+      }
+      student.rank = lastRank;
+    });
+
     return groups;
-  }, [data]);
+  }, [data, activeTab]);
 
   const needsProvinceFilter = activeTab === "province";
   const needsDistrictFilter = activeTab === "district";
@@ -314,7 +330,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {groupedData.map((student, index) => (
+                    {rankedData.map((student, index) => (
                       <TableRow key={student.nic} className="group hover:bg-red-50/50 transition-all border-b last:border-0 border-neutral-100">
                         <TableCell className="py-6 text-center">
                           <Button 
@@ -329,12 +345,12 @@ export default function AdminDashboard() {
                         <TableCell>
                           <div className="flex justify-center">
                             <span className={`inline-flex items-center justify-center w-10 h-10 rounded-2xl font-black text-sm shadow-sm transition-all group-hover:scale-110 ${
-                              index === 0 ? 'bg-amber-400 text-white shadow-amber-200' : 
-                              index === 1 ? 'bg-slate-300 text-white shadow-slate-100' : 
-                              index === 2 ? 'bg-orange-300 text-white shadow-orange-100' : 
+                              student.rank === 1 ? 'bg-amber-400 text-white shadow-amber-200' : 
+                              student.rank === 2 ? 'bg-slate-300 text-white shadow-slate-100' : 
+                              student.rank === 3 ? 'bg-orange-300 text-white shadow-orange-100' : 
                               'bg-neutral-100 text-muted-foreground'
                             }`}>
-                              {index + 1}
+                              {student.rank}
                             </span>
                           </div>
                         </TableCell>
