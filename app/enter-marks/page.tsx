@@ -19,13 +19,16 @@ export default function EnterMarks() {
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [nicError, setNicError] = useState(false);
+  const [subjectLimitError, setSubjectLimitError] = useState(false);
 
   const addSubject = (s: string) => {
     if (s && s !== "" && !selectedSubjects.includes(s)) {
       if (selectedSubjects.length >= 3) {
-        setMessage({ type: 'error', text: 'ඔබට තෝරාගත හැක්කේ උපරිම විෂයන් 3ක් පමණි. (You can only select up to 3 subjects.)' });
+        setSubjectLimitError(true);
+        setTimeout(() => setSubjectLimitError(false), 3000);
         return;
       }
+      setSubjectLimitError(false);
       setSelectedSubjects([...selectedSubjects, s]);
     }
   };
@@ -185,6 +188,11 @@ export default function EnterMarks() {
                     clearOnSelect={true}
                     disabled={loading}
                   />
+                  {subjectLimitError && (
+                    <p className="text-[10px] text-destructive font-black animate-bounce mt-1 ml-1 uppercase tracking-widest">
+                      ⚠️ Limit Exceeded! / ඔබට තෝරාගත හැක්කේ උපරිම විෂයන් 3ක් පමණි.
+                    </p>
+                  )}
                   {/* Hidden inputs to send multiple subject values */}
                   {selectedSubjects.map(s => (
                     <input key={s} type="hidden" name="subject" value={s} />
