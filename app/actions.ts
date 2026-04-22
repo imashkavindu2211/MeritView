@@ -11,6 +11,7 @@ export async function submitMarks(formData: FormData) {
     const name = formData.get("name") as string;
     const province = formData.get("province") as string;
     const district = formData.get("district") as string;
+    const category = formData.get("category") as string || "Open";
     const subjects = formData.getAll("subject") as string[];
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
@@ -42,6 +43,7 @@ export async function submitMarks(formData: FormData) {
         name,
         province,
         district,
+        category,
         subject: s,
         iq_marks,
         gk_marks,
@@ -105,7 +107,7 @@ export async function getStudentRank(
   resultId: string, 
   type: 'island' | 'province' | 'district',
   sortBy: 'total_marks' | 'iq_marks' | 'gk_marks' = 'total_marks',
-  scope: 'subject' | 'category' = 'subject'
+  scope: 'subject' | 'general' | 'category' = 'subject'
 ) {
   try {
     const { data: student, error: studentError } = await supabase
@@ -118,7 +120,10 @@ export async function getStudentRank(
       return { rank: null, totalCandidates: 0, error: "Student not found" };
     }
  
-    // Removed category logic
+    const { data: config } = await supabase.from("system_config").select("*");
+    const systemRankingMode = config?.find(c => c.key === "ranking_mode")?.value || "general";
+ 
+    const effectiveRankingMode = scope === 'category' ? 'categorized' : (scope === 'general' ? 'general' : systemRankingMode);
 
     if (scope === 'subject') {
       // Legacy logic remains correct for subject-specific (one row per student per subject)
@@ -127,6 +132,7 @@ export async function getStudentRank(
       
       if (type === 'province') query = query.eq('province', student.province);
       else if (type === 'district') query = query.eq('district', student.district);
+      if (effectiveRankingMode === 'categorized') query = query.eq('category', student.category);
 
       const { count: totalCandidates } = await query;
 
@@ -138,6 +144,7 @@ export async function getStudentRank(
 
       if (type === 'province') higherScoresQuery = higherScoresQuery.eq('province', student.province);
       else if (type === 'district') higherScoresQuery = higherScoresQuery.eq('district', student.district);
+      if (effectiveRankingMode === 'categorized') higherScoresQuery = higherScoresQuery.eq('category', student.category);
 
       const { count: higherScoresCount } = await higherScoresQuery;
       const rank = (higherScoresCount || 0) + 1;
@@ -159,6 +166,11 @@ export async function getStudentRank(
         if (type === 'province') pageQuery = pageQuery.eq('province', student.province);
         else if (type === 'district') pageQuery = pageQuery.eq('district', student.district);
 
+        // Filter by category if effective mode is categorized
+        if (effectiveRankingMode === 'categorized') {
+          pageQuery = pageQuery.eq('category', student.category);
+        }
+
         const { data, error } = await pageQuery;
         if (error) throw error;
         if (!data || data.length === 0) {
@@ -171,24 +183,53 @@ export async function getStudentRank(
       }
 
       // Group by NIC to get unique candidates and their best score in this sort category
-      // (Since per student all subjects have the same marks, any row works)
       const uniquePool = new Map<string, number>();
       (poolData as any[]).forEach(row => {
-        uniquePool.set(row.nic, row[sortBy]);
+        const currentScore = row[sortBy];
+        const existingScore = uniquePool.get(row.nic);
+        if (existingScore === undefined || currentScore > existingScore) {
+          uniquePool.set(row.nic, currentScore);
+        }
       });
 
       const totalCandidates = uniquePool.size;
-      const comparisonValue = student[sortBy];
+      const studentScore = student[sortBy];
       
       let higherCount = 0;
-      uniquePool.forEach(score => {
-        if (score > comparisonValue) higherCount++;
+      uniquePool.forEach((score) => {
+        if (score > studentScore) {
+          higherCount++;
+        }
       });
 
       return { rank: higherCount + 1, totalCandidates };
     }
   } catch (error: any) {
     return { rank: null, totalCandidates: 0, error: error.message };
+  }
+}
+
+export async function getCategoryPeakMarks(category: string, province?: string, district?: string) {
+  try {
+    let query = supabase.from("students_results").select("iq_marks, gk_marks").eq("category", category);
+    
+    if (province) query = query.eq("province", province);
+    if (district) query = query.eq("district", district);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    let maxIQ = 0;
+    let maxGK = 0;
+
+    data?.forEach(row => {
+      if (row.iq_marks > maxIQ) maxIQ = row.iq_marks;
+      if (row.gk_marks > maxGK) maxGK = row.gk_marks;
+    });
+
+    return { success: true, maxIQ, maxGK };
+  } catch (err: any) {
+    return { success: false, error: err.message, maxIQ: 0, maxGK: 0 };
   }
 }
 
@@ -268,6 +309,7 @@ export async function getAdminRankings(
     subject?: string;
     province?: string;
     district?: string;
+    category?: string;
     sortBy?: "total_marks" | "iq_marks" | "gk_marks";
   }
 ) {
@@ -278,11 +320,12 @@ export async function getAdminRankings(
     let finished = false;
 
     while (!finished) {
-      let pageQuery = supabase.from("students_results").select("id, nic, name, province, district, subject, iq_marks, gk_marks, total_marks, created_at");
+      let pageQuery = supabase.from("students_results").select("id, nic, name, province, district, category, subject, iq_marks, gk_marks, total_marks, created_at");
 
       if (params.subject) pageQuery = pageQuery.eq("subject", params.subject);
       if (params.province) pageQuery = pageQuery.eq("province", params.province);
       if (params.district) pageQuery = pageQuery.eq("district", params.district);
+      if (params.category) pageQuery = pageQuery.eq("category", params.category);
 
       const sortColumn = params.sortBy || "total_marks";
       pageQuery = pageQuery.order(sortColumn, { ascending: false }).range(from, from + pageSize - 1);
@@ -373,7 +416,7 @@ export async function getSystemConfig() {
     .from("system_config")
     .select("*");
   
-  if (error) return { marks_entry: true, view_rankings: true };
+  if (error) return { marks_entry: true, view_rankings: true, ranking_mode: "general" };
   
   const configMap: Record<string, boolean> = {};
   data.forEach(item => {
@@ -382,17 +425,25 @@ export async function getSystemConfig() {
   
   return {
     marks_entry: configMap["marks_entry_enabled"] ?? true,
-    view_rankings: configMap["view_rankings_enabled"] ?? true
+    view_rankings: configMap["view_rankings_enabled"] ?? true,
+    ranking_mode: data.find(c => c.key === "ranking_mode")?.value || "general"
   };
 }
 
-export async function toggleConfig(key: "marks_entry_enabled" | "view_rankings_enabled", currentValue: boolean) {
+export async function toggleConfig(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode", currentValue: any) {
   const cookieStore = await cookies();
   if (!cookieStore.get("admin_token")) return { success: false, error: "Unauthorized" };
 
+  let newValue: string;
+  if (key === "ranking_mode") {
+    newValue = currentValue === "general" ? "categorized" : "general";
+  } else {
+    newValue = (!currentValue).toString();
+  }
+
   const { error } = await supabase
     .from("system_config")
-    .update({ value: (!currentValue).toString() })
+    .update({ value: newValue })
     .eq("key", key);
 
   if (error) return { success: false, error: error.message };

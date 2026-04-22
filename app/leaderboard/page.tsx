@@ -17,10 +17,12 @@ export default function Leaderboard() {
   const [data, setData] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Filters
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Open");
+  const [rankingMode, setRankingMode] = useState<string>("general");
+  const [viewRankings, setViewRankings] = useState<boolean>(true);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -39,6 +41,7 @@ export default function Leaderboard() {
       subject: (selectedSubject && selectedSubject !== "ALL_SUBJECTS") ? selectedSubject : undefined,
       province: filterProvince,
       district: filterDistrict,
+      category: selectedCategory, // Always filter by the selected list category
       sortBy
     });
 
@@ -46,9 +49,15 @@ export default function Leaderboard() {
       setData(response.data || []);
     }
     setLoading(false);
-  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject]);
-
+  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory]);
   useEffect(() => {
+    const checkConfig = async () => {
+      const config = await getSystemConfig();
+      if (config.ranking_mode) setRankingMode(config.ranking_mode);
+      setViewRankings(config.view_rankings);
+    };
+    checkConfig();
+
     fetchData();
 
     // Supabase Realtime Subscription for live leaderboard
@@ -76,9 +85,8 @@ export default function Leaderboard() {
     // 1. Group the data first to handle students with multiple records (if any)
     const groups: (Omit<StudentResult, 'nic' | 'subject'>)[] = [];
     const nameMap = new Map<string, number>();
-
-    data.forEach((student) => {
-      const key = `${student.name}-${student.district}-${student.province}`;
+    data.forEach((student: StudentResult) => {
+      const key = `${student.nic}-${student.category}`; // Group by NIC and Category
       if (!nameMap.has(key)) {
         nameMap.set(key, groups.length);
         const { nic, subject, ...safeStudent } = student;
@@ -89,7 +97,7 @@ export default function Leaderboard() {
     // 2. Apply competition ranking (1224)
     let lastScore = -1;
     let lastRank = 1;
-    return groups.map((student, index) => {
+    return groups.map((student: any, index) => {
       const currentScore = (activeTab === "iq_ranking") ? student.iq_marks : 
                            (activeTab === "gk_ranking") ? student.gk_marks : 
                            student.total_marks;
@@ -104,6 +112,22 @@ export default function Leaderboard() {
 
   const needsProvinceFilter = activeTab === "province";
   const needsDistrictFilter = activeTab === "district";
+
+  if (!viewRankings) {
+    return (
+      <div className="w-full max-w-2xl mx-auto py-24 md:py-32 px-6 text-center">
+        <div className="bg-white rounded-[3.5rem] p-16 shadow-2xl shadow-primary/5 border border-primary/5 flex flex-col items-center">
+          <div className="bg-primary/5 p-10 rounded-[3rem] text-primary mb-10 ring-8 ring-primary/5">
+            <Star className="w-20 h-20 opacity-20" />
+          </div>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-6">Leaderboard Restricted</h2>
+          <p className="text-slate-500 font-bold mb-12 leading-relaxed text-lg opacity-70">
+            The public leaderboard is currently hidden by the administrator. Please check back later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6">
@@ -186,6 +210,28 @@ export default function Leaderboard() {
               </Select>
             </div>
           )}
+
+          <div className="flex-1 bg-white p-5 md:p-6 rounded-[2rem] shadow-lg border border-primary/5 animate-in slide-in-from-right-4">
+            <div className="flex items-center gap-2 mb-3 md:mb-4 text-primary">
+              <Filter className="w-3.5 h-3.5" />
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Candidate Type / කාණ්ඩය</p>
+            </div>
+            <div className="flex bg-neutral-100 p-1.5 rounded-2xl border border-neutral-200">
+              {["Open", "Do"].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    selectedCategory === cat 
+                      ? 'bg-white text-primary shadow-lg ring-1 ring-primary/10' 
+                      : 'text-slate-400 hover:text-slate-600 hover:bg-neutral-200/50'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Results Section */}
@@ -255,6 +301,11 @@ export default function Leaderboard() {
                             <p className="font-black text-foreground text-lg tracking-tight group-hover:text-primary transition-colors">
                               {student.name}
                             </p>
+                            {rankingMode === 'general' && (
+                              <span className={`inline-block ml-2 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${student.category === 'Do' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {student.category}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="space-y-0.5">
@@ -308,7 +359,14 @@ export default function Leaderboard() {
                         </div>
                         
                         <div className="flex-grow min-w-0">
-                          <p className="font-black text-base text-foreground truncate">{student.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-black text-base text-foreground truncate">{student.name}</p>
+                            {rankingMode === 'general' && (
+                              <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter ${student.category === 'Do' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {student.category}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <MapPin className="w-3 h-3 text-primary opacity-50" />
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">

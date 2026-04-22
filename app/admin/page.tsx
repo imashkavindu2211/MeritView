@@ -25,9 +25,10 @@ export default function AdminDashboard() {
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   // System Config
-  const [systemConfig, setSystemConfig] = useState({ marks_entry: true, view_rankings: true });
+  const [systemConfig, setSystemConfig] = useState<{ marks_entry: boolean, view_rankings: boolean, ranking_mode: string }>({ marks_entry: true, view_rankings: true, ranking_mode: "general" });
   const [configLoading, setConfigLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -46,6 +47,7 @@ export default function AdminDashboard() {
       subject: (selectedSubject && selectedSubject !== "ALL_SUBJECTS") ? selectedSubject : undefined,
       province: filterProvince,
       district: filterDistrict,
+      category: (selectedCategory && selectedCategory !== "ALL") ? selectedCategory : undefined,
       sortBy
     });
 
@@ -53,7 +55,7 @@ export default function AdminDashboard() {
       setData(response.data || []);
     }
     setLoading(false);
-  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject]);
+  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory]);
 
   const fetchConfig = useCallback(async () => {
     setConfigLoading(true);
@@ -118,10 +120,11 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  async function handleToggle(key: "marks_entry_enabled" | "view_rankings_enabled", current: boolean) {
+  async function handleToggle(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode", current: any) {
     const result = await toggleConfig(key, current);
     if (result.success) {
       fetchConfig();
+      fetchData(); // Refresh data to see new ranks if mode changed
     } else {
       alert("Failed to update config: " + result.error);
     }
@@ -189,11 +192,40 @@ export default function AdminDashboard() {
         lastRank = index + 1;
         lastScore = currentScore;
       }
+      
+      // If categorized mode, we might want to group by category too, 
+      // but since we usually filter the view, the index-based rank is fine if data is already filtered.
+      // However, if we show all data, we need a real competition rank per group.
+      
       student.rank = lastRank;
     });
 
+    if (systemConfig.ranking_mode === "categorized" && (!selectedCategory || selectedCategory === "ALL")) {
+      // Re-calculate ranks per category if no filter is applied but mode is categorized
+      const categorizedGroups: Record<string, typeof groups> = {};
+      groups.forEach(s => {
+        if (!categorizedGroups[s.category]) categorizedGroups[s.category] = [];
+        categorizedGroups[s.category].push(s);
+      });
+
+      Object.values(categorizedGroups).forEach(group => {
+        let lScore = -1;
+        let lRank = 1;
+        group.forEach((s, i) => {
+          const sortBy = activeTab === "iq_ranking" ? "iq_marks" : 
+                         activeTab === "gk_ranking" ? "gk_marks" : 
+                         "total_marks";
+          if (s[sortBy] !== lScore) {
+            lRank = i + 1;
+            lScore = s[sortBy];
+          }
+          s.rank = lRank;
+        });
+      });
+    }
+
     return groups;
-  }, [data, activeTab]);
+  }, [data, activeTab, systemConfig.ranking_mode, selectedCategory]);
 
   const needsProvinceFilter = activeTab === "province";
   const needsDistrictFilter = activeTab === "district";
@@ -294,6 +326,31 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          <div className="w-full md:w-auto animate-in slide-in-from-left-4 duration-500">
+             <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-primary/5 border ring-1 ring-primary/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4 ml-1">Category Filter</p>
+              <div className="flex bg-neutral-100 p-1.5 rounded-2xl border border-neutral-200">
+                {[
+                  { v: "ALL", l: "All Types" },
+                  { v: "Open", l: "Open" },
+                  { v: "Do", l: "Do" }
+                ].map((cat) => (
+                  <button
+                    key={cat.v}
+                    onClick={() => setSelectedCategory(cat.v)}
+                    className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      (selectedCategory || "ALL") === cat.v 
+                        ? 'bg-white text-primary shadow-lg ring-1 ring-primary/10' 
+                        : 'text-slate-400 hover:text-slate-600 hover:bg-neutral-200/50'
+                    }`}
+                  >
+                    {cat.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <Card className="border-0 shadow-2xl shadow-primary/10 bg-white rounded-[3rem] overflow-hidden ring-1 ring-primary/5">
@@ -322,6 +379,7 @@ export default function AdminDashboard() {
                       <TableHead className="w-[80px] text-center font-black uppercase tracking-widest text-[10px]">Action</TableHead>
                       <TableHead className="w-[100px] text-center font-black uppercase tracking-widest text-[10px]">Pos</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Candidate Identity</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px]">Type</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Stream / Subject</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Origin</TableHead>
                       <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">IQ</TableHead>
@@ -370,6 +428,11 @@ export default function AdminDashboard() {
                           <div>
                             <p className="font-black text-foreground tracking-tight text-lg">{student.name}</p>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${student.category === 'Do' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                             {student.category}
+                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-2">

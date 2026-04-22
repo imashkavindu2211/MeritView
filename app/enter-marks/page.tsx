@@ -17,6 +17,7 @@ export default function EnterMarks() {
   const [loading, setLoading] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [nicError, setNicError] = useState(false);
   const [subjectLimitError, setSubjectLimitError] = useState(false);
@@ -57,6 +58,15 @@ export default function EnterMarks() {
       setLoading(false);
       return;
     }
+
+    if (!selectedCategory) {
+      setMessage({ type: 'error', text: 'Please select a category (Open or Do).' });
+      setLoading(false);
+      return;
+    }
+
+    // Append category back to formData since it's no longer a select field
+    formData.set("category", selectedCategory);
 
     const result = await submitMarks(formData);
 
@@ -165,6 +175,26 @@ export default function EnterMarks() {
                     <option value="" disabled className="bg-white text-foreground">Select district</option>
                     {selectedProvince && PROVINCE_DISTRICTS[selectedProvince].map((d) => <option key={d} value={d} className="bg-white text-foreground">{d}</option>)}
                   </select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Category / කාණ්ඩය</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {["Open", "Do"].map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`h-14 rounded-2xl border-2 font-black transition-all ${
+                          selectedCategory === cat
+                            ? "border-primary bg-primary/10 text-primary shadow-lg shadow-primary/5"
+                            : "border-neutral-100 bg-neutral-50/50 text-muted-foreground hover:border-primary/30"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
 

@@ -86,22 +86,39 @@ export default async function Home() {
           </div>
         )}
 
-        <Link href="/leaderboard" className="group">
-          <div className="relative flex flex-col items-center justify-center p-8 h-80 bg-white border-2 border-transparent rounded-[2.5rem] shadow-xl shadow-primary/5 transition-all hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30 group-hover:-translate-y-2 overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
-              <Trophy className="w-32 h-32" />
+        {config.view_rankings ? (
+          <Link href="/leaderboard" className="group">
+            <div className="relative flex flex-col items-center justify-center p-8 h-80 bg-white border-2 border-transparent rounded-[2.5rem] shadow-xl shadow-primary/5 transition-all hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30 group-hover:-translate-y-2 overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                <Trophy className="w-32 h-32" />
+              </div>
+              <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-6 rounded-3xl mb-8 shadow-lg group-hover:rotate-6 transition-transform duration-500">
+                <Trophy className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-2xl font-extrabold text-foreground group-hover:text-primary transition-colors text-center px-2">
+                Leaderboard
+              </h2>
+              <p className="text-muted-foreground mt-4 text-center font-medium text-sm">
+                View top performers and motivational rankings.
+              </p>
             </div>
-            <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-6 rounded-3xl mb-8 shadow-lg group-hover:rotate-6 transition-transform duration-500">
-              <Trophy className="w-10 h-10 text-white" />
+          </Link>
+        ) : (
+          <div className="relative flex flex-col items-center justify-center p-8 h-80 bg-neutral-100 border-2 border-neutral-200 rounded-[2.5rem] shadow-inner opacity-75 grayscale cursor-not-allowed transition-all">
+            <div className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-sm">
+              <Lock className="w-4 h-4 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-extrabold text-foreground group-hover:text-primary transition-colors text-center px-2">
-              Leaderboard
+            <div className="bg-neutral-200 p-6 rounded-3xl mb-8 group-hover:scale-110 transition-transform duration-500">
+              <Trophy className="w-10 h-10 text-neutral-400" />
+            </div>
+            <h2 className="text-2xl font-extrabold text-neutral-400 transition-colors text-center px-2">
+               Board Locked
             </h2>
-            <p className="text-muted-foreground mt-4 text-center font-medium text-sm">
-              View top performers and motivational rankings.
+            <p className="text-neutral-400 mt-4 text-center font-medium text-sm">
+              The leaderboard is currently private.
             </p>
           </div>
-        </Link>
+        )}
       </div>
     </div>
   );

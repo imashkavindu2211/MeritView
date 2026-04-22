@@ -4,6 +4,7 @@ export type StudentResult = {
   name: string;
   province: string;
   district: string;
+  category: string;
   subject: string;
   iq_marks: number;
   gk_marks: number;

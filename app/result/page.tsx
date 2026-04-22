@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { searchStudent, getStudentRank, getOverallCandidateCount } from "@/app/actions";
+import { searchStudent, getStudentRank, getOverallCandidateCount, getCategoryPeakMarks } from "@/app/actions";
 import { StudentResult } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,15 +51,19 @@ function ResultPageContent() {
   
   const [loadingRanks, setLoadingRanks] = useState(false);
   const [viewMode, setViewMode] = useState<'total_marks' | 'iq_marks' | 'gk_marks'>('total_marks');
+  const [rankingScope, setRankingScope] = useState<'general' | 'category'>('general');
+  const [peakMarks, setPeakMarks] = useState<{ iq: number; gk: number } | null>(null);
 
   const fetchAllRanks = useCallback(async (resultId: string, mode: 'total_marks' | 'iq_marks' | 'gk_marks', allResults: StudentResult[]) => {
     setLoadingRanks(true);
     try {
       // 1. Fetch Overall Ranks
+      // We pass the scope to getStudentRank. 
+      // Note: I'll need to update getStudentRank to explicitly handle this scope transition.
       const [island, province, district] = await Promise.all([
-        getStudentRank(resultId, "island", mode, "category"),
-        getStudentRank(resultId, "province", mode, "category"),
-        getStudentRank(resultId, "district", mode, "category")
+        getStudentRank(resultId, "island", mode, rankingScope),
+        getStudentRank(resultId, "province", mode, rankingScope),
+        getStudentRank(resultId, "district", mode, rankingScope)
       ]);
 
       setIslandRank({ rank: island.rank, total: island.totalCandidates });
@@ -82,11 +86,18 @@ function ResultPageContent() {
          };
       }));
       setSubjectRanks(subjResults);
+      // 3. Fetch Category Peaks
+      if (allResults[0]) {
+        const peaks = await getCategoryPeakMarks(allResults[0].category);
+        if (peaks.success) {
+          setPeakMarks({ iq: peaks.maxIQ, gk: peaks.maxGK });
+        }
+      }
     } catch (e) {
       console.error("Error fetching ranks", e);
     }
     setLoadingRanks(false);
-  }, []);
+  }, [rankingScope]); // Added rankingScope to dependencies
 
   useEffect(() => {
     async function fetchData() {
@@ -121,7 +132,7 @@ function ResultPageContent() {
     if (data && results.length > 0) {
       fetchAllRanks(data.id, viewMode, results);
     }
-  }, [data?.id, viewMode, results, fetchAllRanks]);
+  }, [data?.id, viewMode, results, rankingScope, fetchAllRanks]);
 
   // ... rest of the code is unchanged except for the header addition ...
 
@@ -251,6 +262,11 @@ function ResultPageContent() {
                   style={{ width: `${data.iq_marks}%` }}
                 />
               </div>
+              {peakMarks && (
+                <p className="text-[9px] font-black text-rose-900/40 uppercase tracking-widest text-center">
+                  Highest in {data.category}: <span className="text-rose-600/60">{peakMarks.iq}</span>
+                </p>
+              )}
             </div>
 
             {/* General Knowledge */}
@@ -268,6 +284,11 @@ function ResultPageContent() {
                   style={{ width: `${data.gk_marks}%` }}
                 />
               </div>
+              {peakMarks && (
+                <p className="text-[9px] font-black text-rose-900/40 uppercase tracking-widest text-center">
+                  Highest in {data.category}: <span className="text-rose-600/60">{peakMarks.gk}</span>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -294,6 +315,26 @@ function ResultPageContent() {
             ))}
           </div>
 
+          {/* RANKING SCOPE SELECTOR */}
+          <div className="flex bg-neutral-100 p-1.5 rounded-2xl border border-neutral-200">
+            <button
+               onClick={() => setRankingScope('general')}
+               className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                 rankingScope === 'general' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400'
+               }`}
+            >
+              General Rank
+            </button>
+            <button
+               onClick={() => setRankingScope('category')}
+               className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                 rankingScope === 'category' ? 'bg-primary text-white shadow-lg' : 'text-slate-400'
+               }`}
+            >
+              {data.category} Rank
+            </button>
+          </div>
+
           {/* NATIONAL RANKINGS LIST (BOTTOM-UP) */}
           <div className="w-full space-y-16">
              
@@ -301,7 +342,9 @@ function ResultPageContent() {
              <div className="space-y-6">
                 <div className="flex items-center gap-3">
                    <Trophy className="w-6 h-6 text-rose-600" />
-                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">NATIONAL RANKING</h3>
+                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                     {rankingScope === 'category' ? `${data.category} ` : ''}NATIONAL RANKING
+                   </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
