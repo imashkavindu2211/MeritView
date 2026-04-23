@@ -334,7 +334,7 @@ export default function AdminDashboard() {
                 {[
                   { v: "ALL", l: "All Types" },
                   { v: "Open", l: "Open" },
-                  { v: "Do", l: "Do" }
+                  { v: "limited", l: "limited" }
                 ].map((cat) => (
                   <button
                     key={cat.v}
@@ -430,7 +430,7 @@ export default function AdminDashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${student.category === 'Do' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${student.category === 'limited' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                              {student.category}
                            </span>
                         </TableCell>

@@ -217,7 +217,7 @@ export default function Leaderboard() {
               <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Candidate Type / කාණ්ඩය</p>
             </div>
             <div className="flex bg-neutral-100 p-1.5 rounded-2xl border border-neutral-200">
-              {["Open", "Do"].map((cat) => (
+              {["Open", "limited"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -302,7 +302,7 @@ export default function Leaderboard() {
                               {student.name}
                             </p>
                             {rankingMode === 'general' && (
-                              <span className={`inline-block ml-2 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${student.category === 'Do' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                              <span className={`inline-block ml-2 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${student.category === 'limited' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                                 {student.category}
                               </span>
                             )}
@@ -362,7 +362,7 @@ export default function Leaderboard() {
                           <div className="flex items-center gap-2">
                             <p className="font-black text-base text-foreground truncate">{student.name}</p>
                             {rankingMode === 'general' && (
-                              <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter ${student.category === 'Do' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                              <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter ${student.category === 'limited' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                                 {student.category}
                               </span>
                             )}

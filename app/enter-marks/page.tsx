@@ -60,7 +60,7 @@ export default function EnterMarks() {
     }
 
     if (!selectedCategory) {
-      setMessage({ type: 'error', text: 'Please select a category (Open or Do).' });
+      setMessage({ type: 'error', text: 'Please select a category (Open or limited).' });
       setLoading(false);
       return;
     }
@@ -180,7 +180,7 @@ export default function EnterMarks() {
                 <div className="space-y-3">
                   <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Category / කාණ්ඩය</Label>
                   <div className="grid grid-cols-2 gap-4">
-                    {["Open", "Do"].map((cat) => (
+                    {["Open", "limited"].map((cat) => (
                       <button
                         key={cat}
                         type="button"
