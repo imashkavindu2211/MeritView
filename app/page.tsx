@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { ClipboardEdit, Search, Lock, Trophy } from "lucide-react";
 import { getSystemConfig } from "@/app/actions";
+import HomeAnalytics from "@/components/HomeAnalytics";
 
 export default async function Home() {
   const config = await getSystemConfig();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] w-full gap-16 py-10">
+      {/* ... Hero section ... */}
       <div className="text-center space-y-6 max-w-3xl px-4 animate-in fade-in slide-in-from-top-4 duration-700">
         <h1 className="text-5xl md:text-7xl font-black tracking-tight text-foreground leading-[1.1]">
           Modern <span className="text-primary italic">Ranking</span> <br />
@@ -18,6 +20,7 @@ export default async function Home() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl px-4">
+        {/* ... existing cards ... */}
         {config.marks_entry ? (
           <Link href="/enter-marks" className="group">
             <div className="relative flex flex-col items-center justify-center p-8 h-80 bg-white border-2 border-transparent rounded-[2.5rem] shadow-xl shadow-primary/5 transition-all hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30 group-hover:-translate-y-2 overflow-hidden">
@@ -119,6 +122,10 @@ export default async function Home() {
             </p>
           </div>
         )}
+      </div>
+
+      <div className="w-full bg-neutral-50/50 border-y border-neutral-100">
+        <HomeAnalytics />
       </div>
     </div>
   );

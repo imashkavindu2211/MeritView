@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert, BookOpen } from "lucide-react";
+import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert, BookOpen, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
@@ -28,7 +28,12 @@ export default function AdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   // System Config
-  const [systemConfig, setSystemConfig] = useState<{ marks_entry: boolean, view_rankings: boolean, ranking_mode: string }>({ marks_entry: true, view_rankings: true, ranking_mode: "general" });
+  const [systemConfig, setSystemConfig] = useState<{ marks_entry: boolean, view_rankings: boolean, ranking_mode: string, active_exam_date: string }>({ 
+    marks_entry: true, 
+    view_rankings: true, 
+    ranking_mode: "general",
+    active_exam_date: new Date().toISOString().split('T')[0]
+  });
   const [configLoading, setConfigLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -120,7 +125,7 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  async function handleToggle(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode", current: any) {
+  async function handleToggle(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode" | "active_exam_date", current: any) {
     const result = await toggleConfig(key, current);
     if (result.success) {
       fetchConfig();
@@ -489,7 +494,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Toggle Marks Entry */}
           <Card className={`border-0 shadow-xl rounded-[2.5rem] overflow-hidden transition-all duration-500 ${systemConfig.marks_entry ? 'bg-white ring-1 ring-primary/10' : 'bg-neutral-50 grayscale opacity-80'}`}>
             <CardHeader className="pb-4">
@@ -539,6 +544,32 @@ export default function AdminDashboard() {
               >
                 {systemConfig.view_rankings ? "Hide Candidates Results" : "Show Candidates Results"}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Active Exam Date Selection */}
+          <Card className="border-0 shadow-xl rounded-[2.5rem] bg-white ring-1 ring-primary/10 overflow-hidden transition-all duration-500">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-start">
+                <div className="p-4 rounded-2xl bg-primary/10 text-primary">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <div className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
+                  Schedule
+                </div>
+              </div>
+              <CardTitle className="text-xl font-black mt-4">Active Exam Date</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground font-medium mb-8">
+                Set the date for the current scoring session. All new entries will be tagged with this date.
+              </p>
+              <input 
+                type="date" 
+                value={systemConfig.active_exam_date}
+                onChange={(e) => handleToggle("active_exam_date", e.target.value)}
+                className="w-full h-14 px-4 rounded-2xl font-bold border-2 border-neutral-100 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              />
             </CardContent>
           </Card>
 

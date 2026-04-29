@@ -36,6 +36,10 @@ export async function submitMarks(formData: FormData) {
 
     const total_marks = iq_marks + gk_marks;
 
+    // Fetch active exam date from config
+    const { data: configData } = await supabase.from("system_config").select("value").eq("key", "active_exam_date").single();
+    const activeExamDate = configData?.value || new Date().toISOString().split('T')[0];
+
     // Use a single batch insert for all subjects
     const { error } = await supabase.from("students_results").insert(
       subjects.map(s => ({
@@ -48,6 +52,7 @@ export async function submitMarks(formData: FormData) {
         iq_marks,
         gk_marks,
         total_marks,
+        exam_date: activeExamDate
       }))
     );
 
@@ -416,7 +421,12 @@ export async function getSystemConfig() {
     .from("system_config")
     .select("*");
   
-  if (error) return { marks_entry: true, view_rankings: true, ranking_mode: "general" };
+  if (error) return { 
+    marks_entry: true, 
+    view_rankings: true, 
+    ranking_mode: "general",
+    active_exam_date: new Date().toISOString().split('T')[0]
+  };
   
   const configMap: Record<string, boolean> = {};
   data.forEach(item => {
@@ -426,17 +436,51 @@ export async function getSystemConfig() {
   return {
     marks_entry: configMap["marks_entry_enabled"] ?? true,
     view_rankings: configMap["view_rankings_enabled"] ?? true,
-    ranking_mode: data.find(c => c.key === "ranking_mode")?.value || "general"
+    ranking_mode: data.find(c => c.key === "ranking_mode")?.value || "general",
+    active_exam_date: data.find(c => c.key === "active_exam_date")?.value || new Date().toISOString().split('T')[0]
   };
 }
 
-export async function toggleConfig(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode", currentValue: any) {
+export async function getUserPerformance(nic: string) {
+  try {
+    const { data, error } = await supabase
+      .from("students_results")
+      .select("iq_marks, gk_marks, total_marks, exam_date, subject")
+      .eq("nic", nic)
+      .order("exam_date", { ascending: true });
+
+    if (error) throw error;
+
+    // Group by exam_date and take average or max if user entered multiple subjects on same date
+    // Actually, usually it's one set of marks for all subjects on that date in this app?
+    // The current UI sends multiple subjects with same IQ/GK marks.
+    // So for the chart, we just need unique (nic, exam_date) scores.
+    const performanceMap = new Map<string, { iq: number, gk: number, total: number }>();
+    data?.forEach(row => {
+      performanceMap.set(row.exam_date, { iq: row.iq_marks, gk: row.gk_marks, total: row.total_marks });
+    });
+
+    return { 
+      success: true, 
+      data: Array.from(performanceMap.entries()).map(([date, marks]) => ({
+        date,
+        ...marks
+      }))
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function toggleConfig(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode" | "active_exam_date", currentValue: any) {
   const cookieStore = await cookies();
   if (!cookieStore.get("admin_token")) return { success: false, error: "Unauthorized" };
 
   let newValue: string;
   if (key === "ranking_mode") {
     newValue = currentValue === "general" ? "categorized" : "general";
+  } else if (key === "active_exam_date") {
+    newValue = currentValue; // currentValue is the new date string in this case
   } else {
     newValue = (!currentValue).toString();
   }

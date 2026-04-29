@@ -10,6 +10,7 @@ export type StudentResult = {
   gk_marks: number;
   total_marks: number;
   created_at: string;
+  exam_date: string;
 };
 
 export type StudentRankData = StudentResult & {
