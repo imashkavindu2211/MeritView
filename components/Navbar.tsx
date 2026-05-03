@@ -15,7 +15,7 @@ export function Navbar() {
         const config = await getSystemConfig();
         // The action returns { iq_marks_enabled: boolean, view_rankings_enabled: boolean, ... }
         // Let's check the exact keys returned by getSystemConfig
-        setSystemConfig({ view_rankings: config.view_rankings_enabled });
+        setSystemConfig({ view_rankings: config.view_rankings });
       } catch (e) {
         console.error("Failed to fetch config in Navbar", e);
       }
