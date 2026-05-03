@@ -7,7 +7,7 @@ import { TrendingUp, Activity, Brain, BookOpen, Layers } from "lucide-react";
 
 interface PerformanceChartProps {
   data: {
-    date: string;
+    paper: string;
     iq: number;
     gk: number;
     total: number;
@@ -88,7 +88,7 @@ export default function PerformanceChart({ data, name }: PerformanceChartProps) 
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
               <XAxis 
-                dataKey="date" 
+                dataKey="paper" 
                 axisLine={false} 
                 tickLine={false} 
                 tick={{ fill: '#a3a3a3', fontSize: 10, fontWeight: 700 }}

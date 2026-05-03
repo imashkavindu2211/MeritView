@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert, BookOpen, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -28,11 +29,12 @@ export default function AdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   // System Config
-  const [systemConfig, setSystemConfig] = useState<{ marks_entry: boolean, view_rankings: boolean, ranking_mode: string, active_exam_date: string }>({ 
+  const [systemConfig, setSystemConfig] = useState<{ marks_entry: boolean, view_rankings: boolean, ranking_mode: string, active_paper_number: string, iq_marks_enabled: boolean }>({ 
     marks_entry: true, 
     view_rankings: true, 
+    iq_marks_enabled: true,
     ranking_mode: "general",
-    active_exam_date: new Date().toISOString().split('T')[0]
+    active_paper_number: "1"
   });
   const [configLoading, setConfigLoading] = useState(true);
 
@@ -125,7 +127,7 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  async function handleToggle(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode" | "active_exam_date", current: any) {
+  async function handleToggle(key: "marks_entry_enabled" | "view_rankings_enabled" | "ranking_mode" | "active_paper_number" | "iq_marks_enabled", current: any) {
     const result = await toggleConfig(key, current);
     if (result.success) {
       fetchConfig();
@@ -267,7 +269,7 @@ export default function AdminDashboard() {
             { v: "island", l: "Island Ranking" },
             { v: "province", l: "Province Ranking" },
             { v: "district", l: "District Ranking" },
-            { v: "iq_ranking", l: "IQ Peak" },
+            ...(systemConfig.iq_marks_enabled ? [{ v: "iq_ranking", l: "IQ Peak" }] : []),
             { v: "gk_ranking", l: "GK Peak" }
           ].map((tab) => (
             <TabsTrigger 
@@ -387,9 +389,10 @@ export default function AdminDashboard() {
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Type</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Stream / Subject</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Origin</TableHead>
-                      <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">IQ</TableHead>
-                      <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">GK</TableHead>
-                      <TableHead className="text-right font-black text-primary uppercase tracking-widest text-[10px] pr-10">Aggregate</TableHead>
+                      <TableHead className="text-center font-black uppercase tracking-widest text-[10px]">Papers</TableHead>
+                      {systemConfig.iq_marks_enabled && <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">IQ Total</TableHead>}
+                      <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">GK Total</TableHead>
+                      <TableHead className="text-right font-black text-primary uppercase tracking-widest text-[10px] pr-10">Grand Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -460,7 +463,10 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-bold tabular-nums text-foreground opacity-70">{student.iq_marks}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" className="rounded-lg font-black">{student.papers_count || 1}</Badge>
+                        </TableCell>
+                        {systemConfig.iq_marks_enabled && <TableCell className="text-right font-bold tabular-nums text-foreground opacity-70">{student.iq_marks}</TableCell>}
                         <TableCell className="text-right font-bold tabular-nums text-foreground opacity-70">{student.gk_marks}</TableCell>
                         <TableCell className="text-right pr-10">
                           <span className={`inline-block py-2 px-6 rounded-2xl font-black text-xl tabular-nums shadow-lg transition-all ${
@@ -547,29 +553,30 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Active Exam Date Selection */}
-          <Card className="border-0 shadow-xl rounded-[2.5rem] bg-white ring-1 ring-primary/10 overflow-hidden transition-all duration-500">
+
+          {/* Toggle IQ Marks */}
+          <Card className={`border-0 shadow-xl rounded-[2.5rem] overflow-hidden transition-all duration-500 ${systemConfig.iq_marks_enabled ? 'bg-white ring-1 ring-primary/10' : 'bg-neutral-50 grayscale opacity-80'}`}>
             <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
-                <div className="p-4 rounded-2xl bg-primary/10 text-primary">
-                  <Calendar className="w-6 h-6" />
+                <div className={`p-4 rounded-2xl ${systemConfig.iq_marks_enabled ? 'bg-primary/10 text-primary' : 'bg-neutral-200 text-neutral-500'}`}>
+                  <BookOpen className="w-6 h-6" />
                 </div>
-                <div className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
-                  Schedule
+                <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${systemConfig.iq_marks_enabled ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {systemConfig.iq_marks_enabled ? 'IQ Enabled' : 'GK Only'}
                 </div>
               </div>
-              <CardTitle className="text-xl font-black mt-4">Active Exam Date</CardTitle>
+              <CardTitle className="text-xl font-black mt-4">IQ Marks Status</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground font-medium mb-8">
-                Set the date for the current scoring session. All new entries will be tagged with this date.
+                Toggle whether the system accepts and displays IQ marks alongside GK marks.
               </p>
-              <input 
-                type="date" 
-                value={systemConfig.active_exam_date}
-                onChange={(e) => handleToggle("active_exam_date", e.target.value)}
-                className="w-full h-14 px-4 rounded-2xl font-bold border-2 border-neutral-100 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-              />
+              <Button 
+                onClick={() => handleToggle("iq_marks_enabled", systemConfig.iq_marks_enabled)}
+                className={`w-full h-14 rounded-2xl font-black transition-all ${systemConfig.iq_marks_enabled ? 'bg-foreground text-background hover:bg-foreground/90' : 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'}`}
+              >
+                {systemConfig.iq_marks_enabled ? "Disable IQ Marks" : "Enable IQ Marks"}
+              </Button>
             </CardContent>
           </Card>
 
