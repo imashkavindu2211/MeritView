@@ -23,7 +23,6 @@ export default function Leaderboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Open");
   const [rankingMode, setRankingMode] = useState<string>("general");
   const [viewRankings, setViewRankings] = useState<boolean>(true);
-  const [iqEnabled, setIqEnabled] = useState<boolean>(true);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -37,11 +36,12 @@ export default function Leaderboard() {
     if (activeTab === "iq_ranking") sortBy = "iq_marks";
     if (activeTab === "gk_ranking") sortBy = "gk_marks";
 
+    // Reusing the same action as it provides regulated access to the data
     const response = await getAdminRankings({
       subject: (selectedSubject && selectedSubject !== "ALL_SUBJECTS") ? selectedSubject : undefined,
       province: filterProvince,
       district: filterDistrict,
-      category: selectedCategory,
+      category: selectedCategory, // Always filter by the selected list category
       sortBy
     });
 
@@ -50,18 +50,17 @@ export default function Leaderboard() {
     }
     setLoading(false);
   }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory]);
-
   useEffect(() => {
     const checkConfig = async () => {
       const config = await getSystemConfig();
       if (config.ranking_mode) setRankingMode(config.ranking_mode);
       setViewRankings(config.view_rankings);
-      setIqEnabled(config.iq_marks_enabled);
     };
     checkConfig();
 
     fetchData();
 
+    // Supabase Realtime Subscription for live leaderboard
     const channel = supabase
       .channel('public-leaderboard')
       .on(
@@ -83,10 +82,11 @@ export default function Leaderboard() {
   }, [fetchData]);
 
   const rankedData = useMemo(() => {
+    // 1. Group the data first to handle students with multiple records (if any)
     const groups: (Omit<StudentResult, 'nic' | 'subject'>)[] = [];
     const nameMap = new Map<string, number>();
     data.forEach((student: StudentResult) => {
-      const key = `${student.nic}-${student.category}`;
+      const key = `${student.nic}-${student.category}`; // Group by NIC and Category
       if (!nameMap.has(key)) {
         nameMap.set(key, groups.length);
         const { nic, subject, ...safeStudent } = student;
@@ -94,12 +94,13 @@ export default function Leaderboard() {
       }
     });
 
+    // 2. Apply competition ranking (1224)
     let lastScore = -1;
     let lastRank = 1;
     return groups.map((student: any, index) => {
       const currentScore = (activeTab === "iq_ranking") ? student.iq_marks : 
                            (activeTab === "gk_ranking") ? student.gk_marks : 
-                           (iqEnabled ? student.total_marks : student.gk_marks);
+                           student.total_marks;
       
       if (currentScore !== lastScore) {
         lastRank = index + 1;
@@ -107,7 +108,7 @@ export default function Leaderboard() {
       }
       return { ...student, rank: lastRank };
     });
-  }, [data, activeTab, iqEnabled]);
+  }, [data, activeTab]);
 
   const needsProvinceFilter = activeTab === "province";
   const needsDistrictFilter = activeTab === "district";
@@ -130,6 +131,7 @@ export default function Leaderboard() {
 
   return (
     <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4 md:px-6">
+      {/* Header section with motivational aura */}
       <div className="relative overflow-hidden bg-[#0a0a0f] text-white rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 mb-8 md:mb-12 shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[100px] -ml-32 -mb-32" />
@@ -148,13 +150,14 @@ export default function Leaderboard() {
       </div>
 
       <div className="space-y-6 md:space-y-8">
+        {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="flex flex-wrap h-auto p-1.5 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-xl border gap-1 md:gap-2">
             {[
               { v: "island", l: "Island" },
               { v: "province", l: "Province" },
               { v: "district", l: "District" },
-              ...(iqEnabled ? [{ v: "iq_ranking", l: "IQ" }] : []),
+              { v: "iq_ranking", l: "IQ" },
               { v: "gk_ranking", l: "GK" }
             ].map((tab) => (
               <TabsTrigger 
@@ -168,6 +171,7 @@ export default function Leaderboard() {
           </TabsList>
         </Tabs>
 
+        {/* Dynamic Filters */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           <div className="flex-1 bg-white p-5 md:p-6 rounded-[2rem] shadow-lg border border-primary/5">
             <div className="flex items-center gap-2 mb-3 md:mb-4 text-primary">
@@ -230,6 +234,7 @@ export default function Leaderboard() {
           </div>
         </div>
 
+        {/* Results Section */}
         <Card className="border-0 shadow-2xl shadow-primary/5 bg-white rounded-[2rem] md:rounded-[3rem] overflow-hidden">
           <CardContent className="p-0">
             {loading ? (
@@ -247,6 +252,7 @@ export default function Leaderboard() {
               </div>
             ) : (
               <div className="w-full">
+                {/* Desktop View Table */}
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader className="bg-neutral-50">
@@ -254,9 +260,7 @@ export default function Leaderboard() {
                         <TableHead className="w-[100px] text-center font-black uppercase tracking-widest text-[9px] py-6">Rank</TableHead>
                         <TableHead className="font-black uppercase tracking-widest text-[9px]">Candidate</TableHead>
                         <TableHead className="font-black uppercase tracking-widest text-[9px]">Location</TableHead>
-                        <TableHead className="text-right font-black uppercase tracking-widest text-[9px] pr-12">
-                          {iqEnabled ? "Grand Total (15 Papers)" : "GK Aggregate (15 Papers)"}
-                        </TableHead>
+                        <TableHead className="text-right font-black uppercase tracking-widest text-[9px] pr-12">Total Score</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -318,7 +322,7 @@ export default function Leaderboard() {
                             }`}>
                               {activeTab === "iq_ranking" ? student.iq_marks : 
                                activeTab === "gk_ranking" ? student.gk_marks : 
-                               (iqEnabled ? student.total_marks : student.gk_marks)}
+                               student.total_marks}
                             </span>
                           </TableCell>
                         </TableRow>
@@ -327,6 +331,7 @@ export default function Leaderboard() {
                   </Table>
                 </div>
 
+                {/* Mobile View Cards */}
                 <div className="md:hidden divide-y divide-neutral-100">
                   {rankedData.map((student, index) => (
                     <div 
@@ -379,7 +384,7 @@ export default function Leaderboard() {
                           }`}>
                             {activeTab === "iq_ranking" ? student.iq_marks : 
                              activeTab === "gk_ranking" ? student.gk_marks : 
-                             (iqEnabled ? student.total_marks : student.gk_marks)}
+                             student.total_marks}
                           </div>
                         </div>
                     </div>

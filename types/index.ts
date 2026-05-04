@@ -11,11 +11,6 @@ export type StudentResult = {
   total_marks: number;
   created_at: string;
   exam_date: string;
-  paper_number: number;
-  papers_count?: number;
-  iq_aggregate?: number;
-  gk_aggregate?: number;
-  total_aggregate?: number;
 };
 
 export type StudentRankData = StudentResult & {

@@ -22,6 +22,8 @@ export default function HomeAnalytics() {
     const result = await getUserPerformance(nic);
     if (result.success && result.data && result.data.length > 0) {
       setPerformanceData(result.data);
+      // We don't have the user's name in getUserPerformance easily without another query, 
+      // but we can assume we might want to fetch it or just show "Your Performance"
       setUserName("Your"); 
     } else {
       setError("No performance history found for this NIC.");
@@ -40,7 +42,7 @@ export default function HomeAnalytics() {
           Track Your Progress
         </h2>
         <p className="text-muted-foreground font-medium text-lg max-w-2xl mx-auto">
-          Enter your NIC number to visualize your performance growth across all GK papers (1-20).
+          Enter your NIC number to visualize your performance growth across all examination dates.
         </p>
       </div>
 
