@@ -22,9 +22,6 @@ export function Navbar() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/check-results" className="text-sm font-bold text-gray-400 hover:text-white transition-colors uppercase tracking-widest">
-              Results
-            </Link>
             <Link href="/leaderboard" className="text-sm font-bold text-gray-400 hover:text-white transition-colors uppercase tracking-widest">
               Leaderboard
             </Link>
@@ -46,16 +43,6 @@ export function Navbar() {
         {/* Mobile Nav Overlay */}
         {isOpen && (
           <div className="md:hidden pb-10 space-y-2 animate-in fade-in slide-in-from-top-5 duration-300">
-            <Link 
-                href="/check-results" 
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 text-sm font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
-            >
-              <div className="bg-primary/20 p-2 rounded-lg">
-                <Search className="w-4 h-4 text-primary" />
-              </div>
-              Results
-            </Link>
             <Link 
                 href="/leaderboard" 
                 onClick={() => setIsOpen(false)}
