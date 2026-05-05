@@ -53,14 +53,15 @@ export default function AdminDashboard() {
       province: filterProvince,
       district: filterDistrict,
       category: (selectedCategory && selectedCategory !== "ALL") ? selectedCategory : undefined,
-      sortBy
+      sortBy,
+      examDate: systemConfig.active_exam_date
     });
 
     if (response.success) {
       setData(response.data || []);
     }
     setLoading(false);
-  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory]);
+  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory, systemConfig.active_exam_date]);
 
   const fetchConfig = useCallback(async () => {
     setConfigLoading(true);

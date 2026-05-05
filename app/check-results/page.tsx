@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { searchStudent } from "@/app/actions";
+import { useEffect, useState } from "react";
+import { searchStudent, getSystemConfig } from "@/app/actions";
 import { Search, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,15 @@ export default function CheckResults() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nicError, setNicError] = useState(false);
+  const [activeDate, setActiveDate] = useState<string>("");
+
+  useEffect(() => {
+    async function fetchConfig() {
+      const config = await getSystemConfig();
+      if (config.active_exam_date) setActiveDate(config.active_exam_date);
+    }
+    fetchConfig();
+  }, []);
 
   async function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,7 +32,7 @@ export default function CheckResults() {
     const formData = new FormData(e.currentTarget);
     const nic = formData.get("nic") as string;
 
-    const result = await searchStudent(nic);
+    const result = await searchStudent(nic, activeDate);
     setLoading(false);
 
     if (result.success && result.data) {

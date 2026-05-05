@@ -73,7 +73,7 @@ export async function submitMarks(formData: FormData) {
   }
 }
 
-export async function searchStudent(nic: string): Promise<{ success: boolean; data?: StudentResult[]; error?: string }> {
+export async function searchStudent(nic: string, examDate?: string): Promise<{ success: boolean; data?: StudentResult[]; error?: string }> {
   try {
     if (!nic) {
       return { success: false, error: "NIC is required." };
@@ -85,10 +85,14 @@ export async function searchStudent(nic: string): Promise<{ success: boolean; da
       return { success: false, error: "Result viewing is currently disabled by the administrator." };
     }
 
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from("students_results")
       .select("*")
       .eq("nic", nic);
+    
+    if (examDate) query = query.eq("exam_date", examDate);
+
+    const { data, error } = await query;
 
     if (error) {
       console.error(error);
@@ -131,6 +135,7 @@ export async function getStudentRank(
       // Legacy logic remains correct for subject-specific (one row per student per subject)
       let query = supabaseAdmin.from("students_results").select("id", { count: 'exact', head: true });
       query = query.eq('subject', student.subject);
+      if (student.exam_date) query = query.eq('exam_date', student.exam_date);
       
       if (type === 'province') query = query.eq('province', student.province);
       else if (type === 'district') query = query.eq('district', student.district);
@@ -143,6 +148,8 @@ export async function getStudentRank(
         .select("id", { count: 'exact', head: true })
         .eq('subject', student.subject)
         .gt(sortBy, student[sortBy]);
+      
+      if (student.exam_date) higherScoresQuery = higherScoresQuery.eq('exam_date', student.exam_date);
 
       if (type === 'province') higherScoresQuery = higherScoresQuery.eq('province', student.province);
       else if (type === 'district') higherScoresQuery = higherScoresQuery.eq('district', student.district);
@@ -167,6 +174,8 @@ export async function getStudentRank(
 
         if (type === 'province') pageQuery = pageQuery.eq('province', student.province);
         else if (type === 'district') pageQuery = pageQuery.eq('district', student.district);
+
+        if (student.exam_date) pageQuery = pageQuery.eq('exam_date', student.exam_date);
 
         // Filter by category if effective mode is categorized
         if (effectiveRankingMode === 'categorized') {
@@ -211,12 +220,13 @@ export async function getStudentRank(
   }
 }
 
-export async function getCategoryPeakMarks(category: string, province?: string, district?: string) {
+export async function getCategoryPeakMarks(category: string, province?: string, district?: string, examDate?: string) {
   try {
     let query = supabaseAdmin.from("students_results").select("iq_marks, gk_marks").eq("category", category);
     
     if (province) query = query.eq("province", province);
     if (district) query = query.eq("district", district);
+    if (examDate) query = query.eq("exam_date", examDate);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -250,11 +260,12 @@ export async function getStudentCandidateStats(resultId: string) {
     const { subject, province, district } = student;
 
     // Helper for counts
-    const getCount = async (filters: { subject?: string; province?: string; district?: string }) => {
+    const getCount = async (filters: { subject?: string; province?: string; district?: string; examDate?: string }) => {
       let query = supabaseAdmin.from("students_results").select("id", { count: 'exact', head: true });
       if (filters.subject) query = query.eq('subject', filters.subject);
       if (filters.province) query = query.eq('province', filters.province);
       if (filters.district) query = query.eq('district', filters.district);
+      if (filters.examDate) query = query.eq('exam_date', filters.examDate);
       const { count } = await query;
       return count || 0;
     };
@@ -283,18 +294,19 @@ export async function getStudentCandidateStats(resultId: string) {
   }
 }
 
-export async function getGlobalCandidateStats(subject: string) {
+export async function getGlobalCandidateStats(subject: string, examDate?: string) {
   try {
     // Helper for counts
-    const getCount = async (filters: { subject?: string }) => {
+    const getCount = async (filters: { subject?: string; examDate?: string }) => {
       let query = supabaseAdmin.from("students_results").select("id", { count: 'exact', head: true });
       if (filters.subject) query = query.eq('subject', filters.subject);
+      if (filters.examDate) query = query.eq('exam_date', filters.examDate);
       const { count } = await query;
       return count || 0;
     };
 
-    const catTotal = await getCount({});
-    const subTotal = await getCount({ subject });
+    const catTotal = await getCount({ examDate });
+    const subTotal = await getCount({ subject, examDate });
 
     return {
       success: true,
@@ -313,6 +325,7 @@ export async function getAdminRankings(
     district?: string;
     category?: string;
     sortBy?: "total_marks" | "iq_marks" | "gk_marks";
+    examDate?: string;
   }
 ) {
   try {
@@ -328,6 +341,7 @@ export async function getAdminRankings(
       if (params.province) pageQuery = pageQuery.eq("province", params.province);
       if (params.district) pageQuery = pageQuery.eq("district", params.district);
       if (params.category) pageQuery = pageQuery.eq("category", params.category);
+      if (params.examDate) pageQuery = pageQuery.eq("exam_date", params.examDate);
 
       const sortColumn = params.sortBy || "total_marks";
       pageQuery = pageQuery.order(sortColumn, { ascending: false }).range(from, from + pageSize - 1);
@@ -512,7 +526,7 @@ export async function deleteStudent(id: string) {
   }
 }
 
-export async function getOverallCandidateCount() {
+export async function getOverallCandidateCount(examDate?: string) {
   try {
     let allData: any[] = [];
     let from = 0;
@@ -520,12 +534,14 @@ export async function getOverallCandidateCount() {
     let finished = false;
 
     while (!finished) {
-      const { data, error } = await supabaseAdmin
+      let query = supabaseAdmin
         .from("students_results")
         .select("nic")
         .range(from, from + pageSize - 1);
       
-      if (error) throw error;
+      if (examDate) query = query.eq("exam_date", examDate);
+
+      const { data, error } = await query;
       
       if (!data || data.length === 0) {
         finished = true;

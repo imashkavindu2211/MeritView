@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { searchStudent, getStudentRank, getOverallCandidateCount, getCategoryPeakMarks } from "@/app/actions";
+import { searchStudent, getStudentRank, getOverallCandidateCount, getCategoryPeakMarks, getSystemConfig } from "@/app/actions";
 import { StudentResult } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ function ResultPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [overallCount, setOverallCount] = useState<number>(0);
+  const [activeDate, setActiveDate] = useState<string>("");
 
   const data = results[selectedIndex];
 
@@ -87,8 +88,8 @@ function ResultPageContent() {
       }));
       setSubjectRanks(subjResults);
       // 3. Fetch Category Peaks
-      if (allResults[0]) {
-        const peaks = await getCategoryPeakMarks(allResults[0].category);
+      if (allResults[selectedIndex]) {
+        const peaks = await getCategoryPeakMarks(allResults[selectedIndex].category, undefined, undefined, allResults[selectedIndex].exam_date);
         if (peaks.success) {
           setPeakMarks({ iq: peaks.maxIQ, gk: peaks.maxGK });
         }
@@ -107,9 +108,13 @@ function ResultPageContent() {
         return;
       }
 
+      const config = await getSystemConfig();
+      const currentActiveDate = config.active_exam_date || "";
+      setActiveDate(currentActiveDate);
+
       const [studentData, globalData] = await Promise.all([
-        searchStudent(nicParam),
-        getOverallCandidateCount()
+        searchStudent(nicParam, currentActiveDate),
+        getOverallCandidateCount(currentActiveDate)
       ]);
 
       if (studentData.success && studentData.data && studentData.data.length > 0) {

@@ -23,6 +23,7 @@ export default function Leaderboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("Open");
   const [rankingMode, setRankingMode] = useState<string>("general");
   const [viewRankings, setViewRankings] = useState<boolean>(true);
+  const [activeExamDate, setActiveExamDate] = useState<string>("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -42,19 +43,21 @@ export default function Leaderboard() {
       province: filterProvince,
       district: filterDistrict,
       category: selectedCategory, // Always filter by the selected list category
-      sortBy
+      sortBy,
+      examDate: activeExamDate || undefined
     });
 
     if (response.success) {
       setData(response.data || []);
     }
     setLoading(false);
-  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory]);
+  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory, activeExamDate]);
   useEffect(() => {
     const checkConfig = async () => {
       const config = await getSystemConfig();
       if (config.ranking_mode) setRankingMode(config.ranking_mode);
       setViewRankings(config.view_rankings);
+      if (config.active_exam_date) setActiveExamDate(config.active_exam_date);
     };
     checkConfig();
 
