@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert, BookOpen, Calendar } from "lucide-react";
+import { LogOut, RefreshCcw, Loader2, Trash2, Eye, EyeOff, Edit3, ShieldAlert, BookOpen, Calendar, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { SubjectAutocomplete } from "@/components/SubjectAutocomplete";
@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
 
   // System Config
   const [systemConfig, setSystemConfig] = useState<{ marks_entry: boolean, view_rankings: boolean, ranking_mode: string, active_exam_date: string }>({ 
@@ -54,14 +55,15 @@ export default function AdminDashboard() {
       district: filterDistrict,
       category: (selectedCategory && selectedCategory !== "ALL") ? selectedCategory : undefined,
       sortBy,
-      examDate: systemConfig.active_exam_date
+      examDate: systemConfig.active_exam_date,
+      language: (selectedLanguage && selectedLanguage !== "ALL") ? selectedLanguage : undefined
     });
 
     if (response.success) {
       setData(response.data || []);
     }
     setLoading(false);
-  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory, systemConfig.active_exam_date]);
+  }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory, selectedLanguage, systemConfig.active_exam_date]);
 
   const fetchConfig = useCallback(async () => {
     setConfigLoading(true);
@@ -140,35 +142,6 @@ export default function AdminDashboard() {
     setConfigLoading(false);
   }
 
-  async function handleDeleteSingle(ids: string[], name: string) {
-    if (!confirm(`Are you sure you want to delete all records for ${name}? This action cannot be undone.`)) {
-      return;
-    }
-    
-    // Additional password verification for security
-    const password = prompt("ADMIN AUTHORIZATION REQUIRED: Please enter the admin password to confirm deletion of this candidate's history:");
-    if (!password) return;
-    
-    setLoading(true);
-    const isValid = await verifyAdminPassword(password);
-    if (!isValid) {
-      alert("Unauthorized: Incorrect admin password.");
-      setLoading(false);
-      return;
-    }
-
-    // Delete all related records for this person in this group
-    const results = await Promise.all(ids.map(id => deleteStudent(id)));
-    const allSuccessful = results.every(r => r.success);
-    
-    if (allSuccessful) {
-      fetchData();
-    } else {
-      alert("Error deleting some student records.");
-      fetchData();
-    }
-    setLoading(false);
-  }
 
   const rankedData = useMemo(() => {
     const groups: (StudentResult & { subjects: string[], allIds: string[], rank: number })[] = [];
@@ -258,6 +231,10 @@ export default function AdminDashboard() {
           <Button variant="outline" onClick={fetchData} className="flex-1 lg:flex-none h-14 rounded-2xl gap-2 font-bold bg-white hover:bg-primary/5 border-2 transition-all active:scale-95">
             <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             Refresh Data
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/admin/contacts")} className="flex-1 lg:flex-none h-14 rounded-2xl gap-2 font-bold bg-white hover:bg-green-50 border-2 transition-all active:scale-95 text-green-700 border-green-100">
+            <MessageCircle className="w-5 h-5" />
+            Contacts
           </Button>
           <Button variant="destructive" onClick={handleLogout} className="flex-1 lg:flex-none h-14 rounded-2xl gap-2 font-bold shadow-lg shadow-destructive/20 transition-all hover:scale-105 active:scale-95">
             <LogOut className="w-5 h-5" />
@@ -361,6 +338,31 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+          <div className="w-full md:w-auto animate-in slide-in-from-left-4 duration-500">
+             <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-primary/5 border ring-1 ring-primary/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4 ml-1">Language Filter</p>
+              <div className="flex bg-neutral-100 p-1.5 rounded-2xl border border-neutral-200">
+                {[
+                  { v: "ALL", l: "All" },
+                  { v: "Sinhala", l: "Sinhala" },
+                  { v: "English", l: "English" },
+                  { v: "Tamil", l: "Tamil" }
+                ].map((lang) => (
+                  <button
+                    key={lang.v}
+                    onClick={() => setSelectedLanguage(lang.v === "ALL" ? "" : lang.v)}
+                    className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      (selectedLanguage || "ALL") === lang.v 
+                        ? 'bg-white text-primary shadow-lg ring-1 ring-primary/10' 
+                        : 'text-slate-400 hover:text-slate-600 hover:bg-neutral-200/50'
+                    }`}
+                  >
+                    {lang.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <Card className="border-0 shadow-2xl shadow-primary/10 bg-white rounded-[3rem] overflow-hidden ring-1 ring-primary/5">
@@ -386,12 +388,12 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader className="bg-neutral-50/50">
                     <TableRow className="hover:bg-transparent border-b-2 text-neutral-900">
-                      <TableHead className="w-[80px] text-center font-black uppercase tracking-widest text-[10px]">Action</TableHead>
                       <TableHead className="w-[100px] text-center font-black uppercase tracking-widest text-[10px]">Pos</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Candidate Identity</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Type</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Stream / Subject</TableHead>
                       <TableHead className="font-black uppercase tracking-widest text-[10px]">Origin</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px]">Lang</TableHead>
                       <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">IQ</TableHead>
                       <TableHead className="text-right font-black uppercase tracking-widest text-[10px]">GK</TableHead>
                       <TableHead className="text-right font-black text-primary uppercase tracking-widest text-[10px] pr-10">Aggregate</TableHead>
@@ -408,16 +410,6 @@ export default function AdminDashboard() {
                           'hover:bg-red-50/50'
                         }`}
                       >
-                        <TableCell className="py-6 text-center">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleDeleteSingle(student.allIds, student.name)}
-                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </Button>
-                        </TableCell>
                         <TableCell>
                           <div className="flex justify-center">
                             {student.rank <= 3 ? (
@@ -464,6 +456,9 @@ export default function AdminDashboard() {
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter opacity-50">{student.province}</p>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-[10px] font-black text-muted-foreground uppercase">{student.language || 'Sinhala'}</span>
                         </TableCell>
                         <TableCell className="text-right font-bold tabular-nums text-foreground opacity-70">{student.iq_marks}</TableCell>
                         <TableCell className="text-right font-bold tabular-nums text-foreground opacity-70">{student.gk_marks}</TableCell>

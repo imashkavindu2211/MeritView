@@ -11,6 +11,8 @@ export type StudentResult = {
   total_marks: number;
   created_at: string;
   exam_date: string;
+  language: string;
+  whatsapp?: string;
 };
 
 export type StudentRankData = StudentResult & {

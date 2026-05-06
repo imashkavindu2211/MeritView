@@ -18,9 +18,11 @@ export default function EnterMarks() {
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("Sinhala");
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [nicError, setNicError] = useState(false);
   const [subjectLimitError, setSubjectLimitError] = useState(false);
+  const [showWhatsappNotice, setShowWhatsappNotice] = useState(false);
 
   const addSubject = (s: string) => {
     if (s && s !== "" && !selectedSubjects.includes(s)) {
@@ -65,8 +67,9 @@ export default function EnterMarks() {
       return;
     }
 
-    // Append category back to formData since it's no longer a select field
+    // Append category and language back to formData
     formData.set("category", selectedCategory);
+    formData.set("language", selectedLanguage);
 
     const result = await submitMarks(formData);
 
@@ -145,6 +148,26 @@ export default function EnterMarks() {
                   <Label htmlFor="name" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Full Name</Label>
                   <Input id="name" name="name" placeholder="Candidate Name" required disabled={loading} className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" />
                 </div>
+                
+                <div className="space-y-3 relative">
+                  <Label htmlFor="whatsapp" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">WhatsApp Number</Label>
+                  <Input 
+                    id="whatsapp" 
+                    name="whatsapp" 
+                    placeholder="e.g. 0771234567" 
+                    required 
+                    disabled={loading} 
+                    inputMode="tel"
+                    onFocus={() => setShowWhatsappNotice(true)}
+                    onBlur={() => setShowWhatsappNotice(false)}
+                    className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" 
+                  />
+                  {showWhatsappNotice && (
+                    <div className="absolute z-10 top-full left-0 right-0 mt-2 p-4 bg-primary text-white rounded-2xl shadow-xl text-xs font-bold leading-relaxed animate-in fade-in slide-in-from-top-2">
+                      අපගේ වට්සැප් සමූහයේ සිටින වට්සැප් නම්බර් එක මෙහි ඇතුලත් කරන්න. ඔබගේ ලකුණ වලංගු වන්නේ අපගේ වට්සැප් සමූහයේ සිටීනම් පමණි.
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-3">
                   <Label htmlFor="province" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Province</Label>
@@ -192,6 +215,26 @@ export default function EnterMarks() {
                         }`}
                       >
                         {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Language / භාෂාව</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {["Sinhala", "English", "Tamil"].map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setSelectedLanguage(lang)}
+                        className={`h-14 rounded-2xl border-2 font-black transition-all ${
+                          selectedLanguage === lang
+                            ? "border-primary bg-primary/10 text-primary shadow-lg shadow-primary/5"
+                            : "border-neutral-100 bg-neutral-50/50 text-muted-foreground hover:border-primary/30"
+                        }`}
+                      >
+                        {lang === "Sinhala" ? "සිංහල" : lang}
                       </button>
                     ))}
                   </div>

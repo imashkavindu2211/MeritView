@@ -47,6 +47,11 @@ function ResultPageContent() {
   const [islandRank, setIslandRank] = useState<{ rank: number | null; total: number } | null>(null);
   const [provinceRank, setProvinceRank] = useState<{ rank: number | null; total: number } | null>(null);
   const [districtRank, setDistrictRank] = useState<{ rank: number | null; total: number } | null>(null);
+
+  // Medium specific ranks
+  const [mediumIslandRank, setMediumIslandRank] = useState<{ rank: number | null; total: number } | null>(null);
+  const [mediumProvinceRank, setMediumProvinceRank] = useState<{ rank: number | null; total: number } | null>(null);
+  const [mediumDistrictRank, setMediumDistrictRank] = useState<{ rank: number | null; total: number } | null>(null);
   
   const [subjectRanks, setSubjectRanks] = useState<Record<string, { island: number; province: number; district: number; total: number }>>({});
   
@@ -61,15 +66,22 @@ function ResultPageContent() {
       // 1. Fetch Overall Ranks
       // We pass the scope to getStudentRank. 
       // Note: I'll need to update getStudentRank to explicitly handle this scope transition.
-      const [island, province, district] = await Promise.all([
-        getStudentRank(resultId, "island", mode, rankingScope),
-        getStudentRank(resultId, "province", mode, rankingScope),
-        getStudentRank(resultId, "district", mode, rankingScope)
+      const [island, province, district, mIsland, mProvince, mDistrict] = await Promise.all([
+        getStudentRank(resultId, "island", mode, rankingScope, true),
+        getStudentRank(resultId, "province", mode, rankingScope, true),
+        getStudentRank(resultId, "district", mode, rankingScope, true),
+        getStudentRank(resultId, "island", mode, rankingScope, false),
+        getStudentRank(resultId, "province", mode, rankingScope, false),
+        getStudentRank(resultId, "district", mode, rankingScope, false)
       ]);
 
       setIslandRank({ rank: island.rank, total: island.totalCandidates });
       setProvinceRank({ rank: province.rank, total: province.totalCandidates });
       setDistrictRank({ rank: district.rank, total: district.totalCandidates });
+
+      setMediumIslandRank({ rank: mIsland.rank, total: mIsland.totalCandidates });
+      setMediumProvinceRank({ rank: mProvince.rank, total: mProvince.totalCandidates });
+      setMediumDistrictRank({ rank: mDistrict.rank, total: mDistrict.totalCandidates });
 
       // 2. Fetch Ranks for EACH Subject
       const subjResults: Record<string, any> = {};
@@ -197,10 +209,9 @@ function ResultPageContent() {
           <div className="flex-1 text-center md:text-left space-y-4">
             <div>
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-3">
-                <Badge className="text-[8px] font-black uppercase tracking-widest bg-rose-600 text-white border-0 px-3 py-1">
-                   Candidate
+                <Badge className="text-[8px] font-black uppercase tracking-widest bg-blue-600 text-white border-0 px-3 py-1">
+                   {data.language || 'Sinhala'} Medium
                 </Badge>
-
               </div>
               <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
                  <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">{data.name}</h2>
@@ -344,18 +355,48 @@ function ResultPageContent() {
           <div className="w-full space-y-16">
              
              {/* 1. OVERALL NATIONAL RANKING */}
+             {/* 1. GENERAL NATIONAL RANKING (ALL MEDIUMS) */}
              <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                   <Trophy className="w-6 h-6 text-rose-600" />
+                   <Globe className="w-6 h-6 text-slate-600" />
                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                     {rankingScope === 'category' ? `${data.category} ` : ''}NATIONAL RANKING
+                     {rankingScope === 'category' ? `${data.category} ` : ''}GENERAL NATIONAL RANKING
                    </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
-                    { label: 'Island', icon: Trophy, rank: islandRank?.rank, total: islandRank?.total, meta: 'Sri Lanka' },
-                    { label: 'Province', icon: Globe, rank: provinceRank?.rank, total: provinceRank?.total, meta: data.province },
-                    { label: 'District', icon: PieChart, rank: districtRank?.rank, total: districtRank?.total, meta: data.district }
+                    { label: 'Island', icon: Trophy, rank: islandRank?.rank, total: islandRank?.total },
+                    { label: 'Province', icon: Globe, rank: provinceRank?.rank, total: provinceRank?.total },
+                    { label: 'District', icon: PieChart, rank: districtRank?.rank, total: districtRank?.total }
+                  ].map((item, idx) => (
+                    <div key={idx} className="bg-white p-6 rounded-3xl shadow-md border border-slate-100 flex items-center gap-6 group hover:border-slate-300 transition-all duration-500">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-600 group-hover:rotate-12 transition-transform">
+                        <item.icon className="w-8 h-8" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{item.label} Rank</p>
+                        <p className="text-3xl font-black text-slate-900 leading-none">
+                          {loadingRanks ? <Loader2 className="w-6 h-6 animate-spin text-slate-100" /> : item.rank ? item.rank.toString().padStart(2, '0') : '--'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+             </div>
+
+             {/* 2. MEDIUM SPECIFIC RANKING */}
+             <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                   <Trophy className="w-6 h-6 text-rose-600" />
+                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                     {data.language || 'Sinhala'} MEDIUM RANKING
+                   </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[
+                    { label: 'Island', icon: Trophy, rank: mediumIslandRank?.rank, total: mediumIslandRank?.total },
+                    { label: 'Province', icon: Globe, rank: mediumProvinceRank?.rank, total: mediumProvinceRank?.total },
+                    { label: 'District', icon: PieChart, rank: mediumDistrictRank?.rank, total: mediumDistrictRank?.total }
                   ].map((item, idx) => (
                     <div key={idx} className="bg-white p-6 rounded-3xl shadow-md border border-rose-50 flex items-center gap-6 group hover:border-rose-300 transition-all duration-500">
                       <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600 group-hover:rotate-12 transition-transform">
@@ -366,7 +407,6 @@ function ResultPageContent() {
                         <p className="text-3xl font-black text-slate-900 leading-none">
                           {loadingRanks ? <Loader2 className="w-6 h-6 animate-spin text-rose-100" /> : item.rank ? item.rank.toString().padStart(2, '0') : '--'}
                         </p>
-
                       </div>
                     </div>
                   ))}

@@ -16,6 +16,8 @@ export async function submitMarks(formData: FormData) {
     const subjects = formData.getAll("subject") as string[];
     const iq_marks = parseInt(formData.get("iq_marks") as string, 10);
     const gk_marks = parseInt(formData.get("gk_marks") as string, 10);
+    const language = formData.get("language") as string || "Sinhala";
+    const whatsapp = formData.get("whatsapp") as string;
 
     // Check system config
     const config = await getSystemConfig();
@@ -25,8 +27,8 @@ export async function submitMarks(formData: FormData) {
 
     const isValid = (marks: number) => marks >= 2 && marks <= 100 && marks % 2 === 0;
 
-    if (!nic || !name || !province || !district || subjects.length === 0 || isNaN(iq_marks) || isNaN(gk_marks)) {
-      return { success: false, error: "All fields are required and subjects must be selected." };
+    if (!nic || !name || !province || !district || subjects.length === 0 || isNaN(iq_marks) || isNaN(gk_marks) || !whatsapp) {
+      return { success: false, error: "All fields are required including WhatsApp number." };
     }
 
     if (!isValid(iq_marks) || !isValid(gk_marks)) {
@@ -51,7 +53,9 @@ export async function submitMarks(formData: FormData) {
         iq_marks,
         gk_marks,
         total_marks,
-        exam_date: activeExamDate
+        exam_date: activeExamDate,
+        language,
+        whatsapp
       }))
     );
 
@@ -113,7 +117,8 @@ export async function getStudentRank(
   resultId: string, 
   type: 'island' | 'province' | 'district',
   sortBy: 'total_marks' | 'iq_marks' | 'gk_marks' = 'total_marks',
-  scope: 'subject' | 'general' | 'category' = 'subject'
+  scope: 'subject' | 'general' | 'category' = 'subject',
+  ignoreLanguage: boolean = false
 ) {
   try {
     const { data: student, error: studentError } = await supabaseAdmin
@@ -140,6 +145,7 @@ export async function getStudentRank(
       if (type === 'province') query = query.eq('province', student.province);
       else if (type === 'district') query = query.eq('district', student.district);
       if (effectiveRankingMode === 'categorized') query = query.eq('category', student.category);
+      if (student.language && !ignoreLanguage) query = query.eq('language', student.language);
 
       const { count: totalCandidates } = await query;
 
@@ -154,6 +160,7 @@ export async function getStudentRank(
       if (type === 'province') higherScoresQuery = higherScoresQuery.eq('province', student.province);
       else if (type === 'district') higherScoresQuery = higherScoresQuery.eq('district', student.district);
       if (effectiveRankingMode === 'categorized') higherScoresQuery = higherScoresQuery.eq('category', student.category);
+      if (student.language && !ignoreLanguage) higherScoresQuery = higherScoresQuery.eq('language', student.language);
 
       const { count: higherScoresCount } = await higherScoresQuery;
       const rank = (higherScoresCount || 0) + 1;
@@ -177,9 +184,12 @@ export async function getStudentRank(
 
         if (student.exam_date) pageQuery = pageQuery.eq('exam_date', student.exam_date);
 
-        // Filter by category if effective mode is categorized
         if (effectiveRankingMode === 'categorized') {
           pageQuery = pageQuery.eq('category', student.category);
+        }
+
+        if (student.language && !ignoreLanguage) {
+          pageQuery = pageQuery.eq('language', student.language);
         }
 
         const { data, error } = await pageQuery;
@@ -227,6 +237,7 @@ export async function getCategoryPeakMarks(category: string, province?: string, 
     if (province) query = query.eq("province", province);
     if (district) query = query.eq("district", district);
     if (examDate) query = query.eq("exam_date", examDate);
+    // Note: Peak marks could also be per language, but I'll leave it global for now unless requested.
 
     const { data, error } = await query;
     if (error) throw error;
@@ -266,6 +277,7 @@ export async function getStudentCandidateStats(resultId: string) {
       if (filters.province) query = query.eq('province', filters.province);
       if (filters.district) query = query.eq('district', filters.district);
       if (filters.examDate) query = query.eq('exam_date', filters.examDate);
+      // Stats could be filtered by language too if needed
       const { count } = await query;
       return count || 0;
     };
@@ -326,6 +338,7 @@ export async function getAdminRankings(
     category?: string;
     sortBy?: "total_marks" | "iq_marks" | "gk_marks";
     examDate?: string;
+    language?: string;
   }
 ) {
   try {
@@ -335,13 +348,14 @@ export async function getAdminRankings(
     let finished = false;
 
     while (!finished) {
-      let pageQuery = supabaseAdmin.from("students_results").select("id, nic, name, province, district, category, subject, iq_marks, gk_marks, total_marks, created_at");
+      let pageQuery = supabaseAdmin.from("students_results").select("id, nic, name, province, district, category, subject, iq_marks, gk_marks, total_marks, language, created_at, exam_date");
 
       if (params.subject) pageQuery = pageQuery.eq("subject", params.subject);
       if (params.province) pageQuery = pageQuery.eq("province", params.province);
       if (params.district) pageQuery = pageQuery.eq("district", params.district);
       if (params.category) pageQuery = pageQuery.eq("category", params.category);
       if (params.examDate) pageQuery = pageQuery.eq("exam_date", params.examDate);
+      if (params.language) pageQuery = pageQuery.eq("language", params.language);
 
       const sortColumn = params.sortBy || "total_marks";
       pageQuery = pageQuery.order(sortColumn, { ascending: false }).range(from, from + pageSize - 1);
@@ -558,5 +572,48 @@ export async function getOverallCandidateCount(examDate?: string) {
     return { success: true, count: uniqueNics.size };
   } catch (err: any) {
     return { success: false, error: err.message, count: 0 };
+  }
+}
+
+export async function getAdminContacts() {
+  const cookieStore = await cookies();
+  if (!cookieStore.get("admin_token")) return { success: false, error: "Unauthorized", data: [] };
+
+  try {
+    const config = await getSystemConfig();
+    const activeDate = config.active_exam_date;
+
+    const { data, error } = await supabaseAdmin
+      .from("students_results")
+      .select("id, nic, whatsapp, name, total_marks, iq_marks, gk_marks")
+      .eq("exam_date", activeDate)
+      .order("total_marks", { ascending: false });
+
+    if (error) throw error;
+
+    // Group by NIC to get unique contacts (highest marks first since we ordered by total_marks)
+    const contactsMap = new Map<string, { id: string, nic: string, whatsapp: string, name: string, total_marks: number, iq_marks: number, gk_marks: number, ids: string[] }>();
+    data?.forEach(row => {
+      if (row.whatsapp) {
+        if (!contactsMap.has(row.nic)) {
+          contactsMap.set(row.nic, { 
+            id: row.id,
+            nic: row.nic, 
+            whatsapp: row.whatsapp, 
+            name: row.name, 
+            total_marks: row.total_marks,
+            iq_marks: row.iq_marks,
+            gk_marks: row.gk_marks,
+            ids: [row.id]
+          });
+        } else {
+          contactsMap.get(row.nic)?.ids.push(row.id);
+        }
+      }
+    });
+
+    return { success: true, data: Array.from(contactsMap.values()) };
+  } catch (err: any) {
+    return { success: false, error: err.message, data: [] };
   }
 }
