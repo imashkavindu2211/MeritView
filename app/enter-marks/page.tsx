@@ -23,6 +23,7 @@ export default function EnterMarks() {
   const [nicError, setNicError] = useState(false);
   const [subjectLimitError, setSubjectLimitError] = useState(false);
   const [showWhatsappNotice, setShowWhatsappNotice] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
 
   const addSubject = (s: string) => {
     if (s && s !== "" && !selectedSubjects.includes(s)) {
@@ -154,20 +155,27 @@ export default function EnterMarks() {
                   <Input 
                     id="whatsapp" 
                     name="whatsapp" 
+                    value={whatsappNumber}
                     placeholder="e.g. 0771234567" 
                     required 
                     disabled={loading} 
-                    inputMode="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     onFocus={() => setShowWhatsappNotice(true)}
                     onBlur={() => setShowWhatsappNotice(false)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setWhatsappNumber(val);
+                    }}
                     className="rounded-2xl border-2 focus:border-primary/50 bg-neutral-50/50 h-14" 
                   />
-                  {showWhatsappNotice && (
+                  {(showWhatsappNotice && whatsappNumber.length === 0) && (
                     <div className="absolute z-10 top-full left-0 right-0 mt-2 p-4 bg-primary text-white rounded-2xl shadow-xl text-xs font-bold leading-relaxed animate-in fade-in slide-in-from-top-2">
                       අපගේ වට්සැප් සමූහයේ සිටින වට්සැප් නම්බර් එක මෙහි ඇතුලත් කරන්න. ඔබගේ ලකුණ වලංගු වන්නේ අපගේ වට්සැප් සමූහයේ සිටීනම් පමණි.
                     </div>
                   )}
                 </div>
+                
 
                 <div className="space-y-3">
                   <Label htmlFor="province" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Province</Label>
