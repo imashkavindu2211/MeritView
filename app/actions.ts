@@ -89,14 +89,22 @@ export async function searchStudent(nic: string, examDate?: string): Promise<{ s
       return { success: false, error: "Result viewing is currently disabled by the administrator." };
     }
 
-    let query = supabaseAdmin
+    const activeDate = config.active_exam_date;
+    let effectiveDate = activeDate;
+
+    // If a different date is requested, check if it's an admin
+    if (examDate && examDate !== activeDate) {
+      const cookieStore = await cookies();
+      if (cookieStore.get("admin_token")) {
+        effectiveDate = examDate;
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
       .from("students_results")
       .select("*")
-      .eq("nic", nic);
-    
-    if (examDate) query = query.eq("exam_date", examDate);
-
-    const { data, error } = await query;
+      .eq("nic", nic)
+      .eq("exam_date", effectiveDate);
 
     if (error) {
       console.error(error);
@@ -104,7 +112,7 @@ export async function searchStudent(nic: string, examDate?: string): Promise<{ s
     }
 
     if (!data || data.length === 0) {
-      return { success: false, error: "Result not found for this NIC." };
+      return { success: false, error: "Result not found for this NIC on the active exam date." };
     }
 
     return { success: true, data };
@@ -232,12 +240,25 @@ export async function getStudentRank(
 
 export async function getCategoryPeakMarks(category: string, province?: string, district?: string, examDate?: string) {
   try {
-    let query = supabaseAdmin.from("students_results").select("iq_marks, gk_marks").eq("category", category);
+    const config = await getSystemConfig();
+    const activeDate = config.active_exam_date;
+    let effectiveDate = activeDate;
+
+    if (examDate && examDate !== activeDate) {
+      const cookieStore = await cookies();
+      if (cookieStore.get("admin_token")) {
+        effectiveDate = examDate;
+      }
+    }
+
+    let query = supabaseAdmin
+      .from("students_results")
+      .select("iq_marks, gk_marks")
+      .eq("category", category)
+      .eq("exam_date", effectiveDate);
     
     if (province) query = query.eq("province", province);
     if (district) query = query.eq("district", district);
-    if (examDate) query = query.eq("exam_date", examDate);
-    // Note: Peak marks could also be per language, but I'll leave it global for now unless requested.
 
     const { data, error } = await query;
     if (error) throw error;
@@ -308,17 +329,28 @@ export async function getStudentCandidateStats(resultId: string) {
 
 export async function getGlobalCandidateStats(subject: string, examDate?: string) {
   try {
+    const config = await getSystemConfig();
+    const activeDate = config.active_exam_date;
+    let effectiveDate = activeDate;
+
+    if (examDate && examDate !== activeDate) {
+      const cookieStore = await cookies();
+      if (cookieStore.get("admin_token")) {
+        effectiveDate = examDate;
+      }
+    }
+
     // Helper for counts
     const getCount = async (filters: { subject?: string; examDate?: string }) => {
       let query = supabaseAdmin.from("students_results").select("id", { count: 'exact', head: true });
       if (filters.subject) query = query.eq('subject', filters.subject);
-      if (filters.examDate) query = query.eq('exam_date', filters.examDate);
+      query = query.eq('exam_date', filters.examDate || effectiveDate);
       const { count } = await query;
       return count || 0;
     };
 
-    const catTotal = await getCount({ examDate });
-    const subTotal = await getCount({ subject, examDate });
+    const catTotal = await getCount({ examDate: effectiveDate });
+    const subTotal = await getCount({ subject, examDate: effectiveDate });
 
     return {
       success: true,
@@ -342,6 +374,18 @@ export async function getAdminRankings(
   }
 ) {
   try {
+    const config = await getSystemConfig();
+    const activeDate = config.active_exam_date;
+    let effectiveDate = activeDate;
+
+    // If a different date is requested, check if it's an admin
+    if (params.examDate && params.examDate !== activeDate) {
+      const cookieStore = await cookies();
+      if (cookieStore.get("admin_token")) {
+        effectiveDate = params.examDate;
+      }
+    }
+
     let allData: any[] = [];
     let from = 0;
     const pageSize = 1000;
@@ -354,8 +398,10 @@ export async function getAdminRankings(
       if (params.province) pageQuery = pageQuery.eq("province", params.province);
       if (params.district) pageQuery = pageQuery.eq("district", params.district);
       if (params.category) pageQuery = pageQuery.eq("category", params.category);
-      if (params.examDate) pageQuery = pageQuery.eq("exam_date", params.examDate);
       if (params.language) pageQuery = pageQuery.eq("language", params.language);
+      
+      // Always filter by the effective date
+      pageQuery = pageQuery.eq("exam_date", effectiveDate);
 
       const sortColumn = params.sortBy || "total_marks";
       pageQuery = pageQuery.order(sortColumn, { ascending: false }).range(from, from + pageSize - 1);
@@ -375,7 +421,7 @@ export async function getAdminRankings(
         else from += pageSize;
       }
       
-      // Safety cap to avoid infinite loops if data is huge, but high enough for 200k
+      // Safety cap
       if (allData.length >= 200000) finished = true;
     }
 
@@ -542,6 +588,17 @@ export async function deleteStudent(id: string) {
 
 export async function getOverallCandidateCount(examDate?: string) {
   try {
+    const config = await getSystemConfig();
+    const activeDate = config.active_exam_date;
+    let effectiveDate = activeDate;
+
+    if (examDate && examDate !== activeDate) {
+      const cookieStore = await cookies();
+      if (cookieStore.get("admin_token")) {
+        effectiveDate = examDate;
+      }
+    }
+
     let allData: any[] = [];
     let from = 0;
     const pageSize = 1000;
@@ -551,10 +608,9 @@ export async function getOverallCandidateCount(examDate?: string) {
       let query = supabaseAdmin
         .from("students_results")
         .select("nic")
+        .eq("exam_date", effectiveDate)
         .range(from, from + pageSize - 1);
       
-      if (examDate) query = query.eq("exam_date", examDate);
-
       const { data, error } = await query;
       
       if (!data || data.length === 0) {

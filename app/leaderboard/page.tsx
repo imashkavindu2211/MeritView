@@ -52,18 +52,24 @@ export default function Leaderboard() {
     }
     setLoading(false);
   }, [activeTab, selectedProvince, selectedDistrict, selectedSubject, selectedCategory, activeExamDate]);
+  // 1. Initial Config Fetch
   useEffect(() => {
-    const checkConfig = async () => {
+    const fetchConfig = async () => {
       const config = await getSystemConfig();
       if (config.ranking_mode) setRankingMode(config.ranking_mode);
       setViewRankings(config.view_rankings);
       if (config.active_exam_date) setActiveExamDate(config.active_exam_date);
     };
-    checkConfig();
+    fetchConfig();
+  }, []);
 
+  // 2. Data Fetch on Filter/Date Change
+  useEffect(() => {
     fetchData();
+  }, [fetchData]);
 
-    // Supabase Realtime Subscription for live leaderboard
+  // 3. Realtime Subscription
+  useEffect(() => {
     const channel = supabase
       .channel('public-leaderboard')
       .on(
